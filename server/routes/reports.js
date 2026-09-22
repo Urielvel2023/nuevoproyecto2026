@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { authMiddleware, requireRole } = require('../auth');
+const ah = require('../utils/asyncHandler');
 
 const router = express.Router();
 router.use(authMiddleware);
@@ -13,27 +14,31 @@ function dateFilter(req) {
   return { from, to };
 }
 
+// Nota: se usa substr(x,1,10) en vez de date(x) para extraer 'YYYY-MM-DD'
+// de las columnas de fecha (guardadas como texto ISO), porque substr()
+// funciona igual en SQLite y PostgreSQL; date() no existe para texto en Postgres.
+
 // Resumen general: ventas totales, número de cuentas cerradas, ticket promedio
-router.get('/summary', (req, res) => {
+router.get('/summary', ah(async (req, res) => {
   const { from, to } = dateFilter(req);
-  const row = db.prepare(`
+  const row = await db.get(`
     SELECT
       COUNT(DISTINCT o.id) as orders_count,
       COALESCE(SUM(oi.price_snapshot * oi.quantity), 0) as total_sales
     FROM orders o
     JOIN order_items oi ON oi.order_id = o.id
     WHERE o.restaurant_id = ? AND o.status = 'cerrada'
-      AND date(o.closed_at) BETWEEN date(?) AND date(?)
-  `).get(req.user.restaurant_id, from, to);
+      AND substr(o.closed_at, 1, 10) BETWEEN ? AND ?
+  `, [req.user.restaurant_id, from, to]);
 
   const avg_ticket = row.orders_count > 0 ? row.total_sales / row.orders_count : 0;
   res.json({ ...row, avg_ticket });
-});
+}));
 
 // Ventas por mesero
-router.get('/by-waiter', (req, res) => {
+router.get('/by-waiter', ah(async (req, res) => {
   const { from, to } = dateFilter(req);
-  const rows = db.prepare(`
+  const rows = await db.all(`
     SELECT u.id as waiter_id, u.name as waiter_name,
            COUNT(DISTINCT o.id) as orders_count,
            COALESCE(SUM(oi.price_snapshot * oi.quantity), 0) as total_sales
@@ -41,17 +46,17 @@ router.get('/by-waiter', (req, res) => {
     JOIN order_items oi ON oi.order_id = o.id
     JOIN users u ON u.id = o.waiter_id
     WHERE o.restaurant_id = ? AND o.status = 'cerrada'
-      AND date(o.closed_at) BETWEEN date(?) AND date(?)
-    GROUP BY u.id
+      AND substr(o.closed_at, 1, 10) BETWEEN ? AND ?
+    GROUP BY u.id, u.name
     ORDER BY total_sales DESC
-  `).all(req.user.restaurant_id, from, to);
+  `, [req.user.restaurant_id, from, to]);
   res.json(rows);
-});
+}));
 
 // Ventas por plato/bebida/postre (agrupado también por categoría de menú)
-router.get('/by-item', (req, res) => {
+router.get('/by-item', ah(async (req, res) => {
   const { from, to } = dateFilter(req);
-  const rows = db.prepare(`
+  const rows = await db.all(`
     SELECT oi.menu_item_id, oi.name_snapshot as name,
            mc.name as category_name,
            COUNT(*) as times_ordered,
@@ -62,17 +67,17 @@ router.get('/by-item', (req, res) => {
     LEFT JOIN menu_items mi ON mi.id = oi.menu_item_id
     LEFT JOIN menu_categories mc ON mc.id = mi.category_id
     WHERE o.restaurant_id = ? AND o.status = 'cerrada'
-      AND date(o.closed_at) BETWEEN date(?) AND date(?)
-    GROUP BY oi.menu_item_id
+      AND substr(o.closed_at, 1, 10) BETWEEN ? AND ?
+    GROUP BY oi.menu_item_id, oi.name_snapshot, mc.name
     ORDER BY total_sales DESC
-  `).all(req.user.restaurant_id, from, to);
+  `, [req.user.restaurant_id, from, to]);
   res.json(rows);
-});
+}));
 
 // Ventas por categoría (platos fuertes, bebidas, postres, etc.)
-router.get('/by-category', (req, res) => {
+router.get('/by-category', ah(async (req, res) => {
   const { from, to } = dateFilter(req);
-  const rows = db.prepare(`
+  const rows = await db.all(`
     SELECT COALESCE(mc.name, 'Sin categoría') as category_name,
            SUM(oi.quantity) as units_sold,
            SUM(oi.price_snapshot * oi.quantity) as total_sales
@@ -81,27 +86,27 @@ router.get('/by-category', (req, res) => {
     LEFT JOIN menu_items mi ON mi.id = oi.menu_item_id
     LEFT JOIN menu_categories mc ON mc.id = mi.category_id
     WHERE o.restaurant_id = ? AND o.status = 'cerrada'
-      AND date(o.closed_at) BETWEEN date(?) AND date(?)
-    GROUP BY mc.id
+      AND substr(o.closed_at, 1, 10) BETWEEN ? AND ?
+    GROUP BY mc.id, mc.name
     ORDER BY total_sales DESC
-  `).all(req.user.restaurant_id, from, to);
+  `, [req.user.restaurant_id, from, to]);
   res.json(rows);
-});
+}));
 
 // Ventas por día (para gráfica de tendencia)
-router.get('/by-day', (req, res) => {
+router.get('/by-day', ah(async (req, res) => {
   const { from, to } = dateFilter(req);
-  const rows = db.prepare(`
-    SELECT date(o.closed_at) as day,
+  const rows = await db.all(`
+    SELECT substr(o.closed_at, 1, 10) as day,
            SUM(oi.price_snapshot * oi.quantity) as total_sales
     FROM orders o
     JOIN order_items oi ON oi.order_id = o.id
     WHERE o.restaurant_id = ? AND o.status = 'cerrada'
-      AND date(o.closed_at) BETWEEN date(?) AND date(?)
+      AND substr(o.closed_at, 1, 10) BETWEEN ? AND ?
     GROUP BY day
     ORDER BY day
-  `).all(req.user.restaurant_id, from, to);
+  `, [req.user.restaurant_id, from, to]);
   res.json(rows);
-});
+}));
 
 module.exports = router;

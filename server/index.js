@@ -6,9 +6,13 @@ const cors = require('cors');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('./auth');
+const db = require('./db');
 
 const app = express();
 app.use(cors());
+// El webhook de Stripe necesita el body crudo (raw) para verificar la firma,
+// así que se monta antes que express.json() (ver routes/billing.js).
+app.use('/api/billing/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
 const server = http.createServer(app);
@@ -40,8 +44,13 @@ app.use('/api/recipes', require('./routes/recipes'));
 app.use('/api/menu', require('./routes/menu'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/reports', require('./routes/reports'));
+app.use('/api/invoicing', require('./routes/invoicing'));
+app.use('/api/accounting', require('./routes/accounting'));
+app.use('/api/payroll', require('./routes/payroll'));
+app.use('/api/delivery', require('./routes/delivery'));
+app.use('/api/billing', require('./routes/billing'));
 
-app.get('/api/health', (req, res) => res.json({ ok: true }));
+app.get('/api/health', (req, res) => res.json({ ok: true, db: db.kind }));
 
 // Servir el frontend (React) compilado, para que backend + frontend
 // sean un solo servicio desplegable (una sola URL, sin instalación local)
@@ -55,5 +64,19 @@ if (fs.existsSync(clientDist)) {
   });
 }
 
+// Middleware de errores: captura lo que rechacen los handlers async (ver utils/asyncHandler.js)
+app.use((err, req, res, next) => {
+  console.error(err);
+  if (res.headersSent) return next(err);
+  res.status(err.status || 500).json({ error: err.publicMessage || 'Error interno del servidor' });
+});
+
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+db.ready
+  .then(() => {
+    server.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT} (base de datos: ${db.kind})`));
+  })
+  .catch((err) => {
+    console.error('No se pudo inicializar la base de datos:', err);
+    process.exit(1);
+  });
