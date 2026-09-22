@@ -27,6 +27,7 @@ export default function Layout() {
               <NavLink to="/admin/contabilidad">💰 Contabilidad</NavLink>
               <NavLink to="/admin/personal">👥 Personal</NavLink>
               <NavLink to="/admin/nomina">🧑‍💼 Nómina</NavLink>
+              <NavLink to="/admin/suscripcion">💳 Suscripción</NavLink>
               <NavLink to="/mesero/mesas">🍽️ Mesas</NavLink>
               <NavLink to="/domicilios">🛵 Domicilios</NavLink>
               <NavLink to="/cocina">👨‍🍳 Cocina</NavLink>

@@ -2,10 +2,12 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
 const { authMiddleware, requireRole } = require('../auth');
+const { requireActiveSubscription } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
 
 const router = express.Router();
 router.use(authMiddleware);
+router.use(requireActiveSubscription);
 
 async function getRecipeWithCost(recipeId, restaurantId) {
   const recipe = await db.get('SELECT * FROM recipes WHERE id = ? AND restaurant_id = ?',

@@ -4,6 +4,7 @@ const { authMiddleware, requireRole } = require('../auth');
 const ah = require('../utils/asyncHandler');
 const { getOrderFull, createOrder, insertOrderItem, insertExternalOrderItem } = require('../services/orders');
 const { webhookToken } = require('../services/delivery');
+const { requireActiveSubscription } = require('../services/billing');
 
 const router = express.Router();
 
@@ -104,6 +105,7 @@ router.post('/webhook/:restaurantId/:token', ah(async (req, res) => {
 // Endpoints autenticados (personal del restaurante)
 // ============================================================
 router.use(authMiddleware);
+router.use(requireActiveSubscription);
 
 router.get('/webhook-url', requireRole('admin'), (req, res) => {
   const token = webhookToken(req.user.restaurant_id);

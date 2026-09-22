@@ -2,6 +2,7 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
 const { authMiddleware, requireRole } = require('../auth');
+const { requireActiveSubscription } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
 const { getOrderFull } = require('../services/orders');
 const { issueDocument, providers } = require('../services/einvoicing');
@@ -9,6 +10,7 @@ const { generateInvoicePdf } = require('../services/pdf');
 
 const router = express.Router();
 router.use(authMiddleware);
+router.use(requireActiveSubscription);
 
 async function getOrCreateSettings(restaurantId) {
   let settings = await db.get('SELECT * FROM fiscal_settings WHERE restaurant_id = ?', [restaurantId]);

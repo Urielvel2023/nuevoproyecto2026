@@ -65,10 +65,15 @@ if (fs.existsSync(clientDist)) {
 }
 
 // Middleware de errores: captura lo que rechacen los handlers async (ver utils/asyncHandler.js)
+// Los errores con `status` explícito (4xx/501, ej. "falta configurar Stripe")
+// se consideran seguros de mostrar tal cual; los demás (500) muestran un
+// mensaje genérico para no filtrar detalles internos.
 app.use((err, req, res, next) => {
   console.error(err);
   if (res.headersSent) return next(err);
-  res.status(err.status || 500).json({ error: err.publicMessage || 'Error interno del servidor' });
+  const status = err.status || 500;
+  const message = err.status ? (err.publicMessage || err.message) : (err.publicMessage || 'Error interno del servidor');
+  res.status(status).json({ error: message });
 });
 
 const PORT = process.env.PORT || 4000;
