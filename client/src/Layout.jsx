@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import ClockWidget from './components/ClockWidget';
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -14,6 +15,7 @@ export default function Layout() {
     <div className="app-shell">
       <div className="sidebar">
         <h2>🍽️ {user?.name}</h2>
+        <ClockWidget />
         <nav>
           {user?.role === 'admin' && (
             <>
@@ -24,6 +26,7 @@ export default function Layout() {
               <NavLink to="/admin/facturacion">🧾 Facturación</NavLink>
               <NavLink to="/admin/contabilidad">💰 Contabilidad</NavLink>
               <NavLink to="/admin/personal">👥 Personal</NavLink>
+              <NavLink to="/admin/nomina">🧑‍💼 Nómina</NavLink>
               <NavLink to="/mesero/mesas">🍽️ Mesas</NavLink>
               <NavLink to="/cocina">👨‍🍳 Cocina</NavLink>
             </>

@@ -10,6 +10,7 @@ import Reports from './pages/Admin/Reports';
 import Staff from './pages/Admin/Staff';
 import Invoicing from './pages/Admin/Invoicing';
 import Accounting from './pages/Admin/Accounting';
+import Payroll from './pages/Admin/Payroll';
 
 import WaiterTables from './pages/Waiter/Tables';
 import WaiterOrder from './pages/Waiter/Order';
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="admin/personal" element={<Protected roles={['admin']}><Staff /></Protected>} />
           <Route path="admin/facturacion" element={<Protected roles={['admin']}><Invoicing /></Protected>} />
           <Route path="admin/contabilidad" element={<Protected roles={['admin']}><Accounting /></Protected>} />
+          <Route path="admin/nomina" element={<Protected roles={['admin']}><Payroll /></Protected>} />
 
           <Route path="mesero/mesas" element={<Protected roles={['mesero', 'admin']}><WaiterTables /></Protected>} />
           <Route path="mesero/pedido/:orderId" element={<Protected roles={['mesero', 'admin']}><WaiterOrder /></Protected>} />
