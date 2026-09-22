@@ -56,6 +56,24 @@ router.post('/', requireRole('mesero', 'admin'), ah(async (req, res) => {
   res.json(full);
 }));
 
+// Últimas cuentas cerradas, indicando si ya tienen documento fiscal emitido
+// (usado por la pantalla de Facturación para elegir qué cuenta facturar)
+router.get('/recent-closed', requireRole('admin'), ah(async (req, res) => {
+  const rows = await db.all(`
+    SELECT o.id, o.table_id, o.channel, o.customer_name, o.closed_at,
+           t.name as table_name,
+           COALESCE(SUM(oi.price_snapshot * oi.quantity), 0) + o.delivery_fee as total,
+           (SELECT full_number FROM tax_documents td WHERE td.order_id = o.id AND td.status != 'rechazada' LIMIT 1) as invoice_number
+    FROM orders o
+    LEFT JOIN tables t ON t.id = o.table_id
+    LEFT JOIN order_items oi ON oi.order_id = o.id
+    WHERE o.restaurant_id = ? AND o.status = 'cerrada'
+    GROUP BY o.id, o.table_id, o.channel, o.customer_name, o.closed_at, t.name, o.delivery_fee
+    ORDER BY o.closed_at DESC LIMIT 50
+  `, [req.user.restaurant_id]);
+  res.json(rows);
+}));
+
 router.get('/:id', ah(async (req, res) => {
   const order = await getOrderFull(db, req.params.id, req.user.restaurant_id);
   if (!order) return res.status(404).json({ error: 'No encontrado' });
