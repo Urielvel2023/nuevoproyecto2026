@@ -22,6 +22,7 @@ export default function Layout() {
               <NavLink to="/admin/menu">🍔 Menú</NavLink>
               <NavLink to="/admin/reportes">📊 Reportes</NavLink>
               <NavLink to="/admin/facturacion">🧾 Facturación</NavLink>
+              <NavLink to="/admin/contabilidad">💰 Contabilidad</NavLink>
               <NavLink to="/admin/personal">👥 Personal</NavLink>
               <NavLink to="/mesero/mesas">🍽️ Mesas</NavLink>
               <NavLink to="/cocina">👨‍🍳 Cocina</NavLink>
