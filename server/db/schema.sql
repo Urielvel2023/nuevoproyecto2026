@@ -120,11 +120,12 @@ CREATE TABLE IF NOT EXISTS orders (
   closed_at TEXT
 );
 
--- Items dentro de un pedido (cada plato/bebida agregado por el mesero)
+-- Items dentro de un pedido (cada plato/bebida agregado por el mesero, o
+-- reportado por una app de domicilios externa vía webhook)
 CREATE TABLE IF NOT EXISTS order_items (
   id TEXT PRIMARY KEY,
   order_id TEXT NOT NULL REFERENCES orders(id),
-  menu_item_id TEXT NOT NULL REFERENCES menu_items(id),
+  menu_item_id TEXT REFERENCES menu_items(id),   -- NULL en ítems reportados por una app externa sin match en el menú
   name_snapshot TEXT NOT NULL,   -- nombre del plato al momento de pedir
   price_snapshot REAL NOT NULL,  -- precio al momento de pedir
   quantity INTEGER NOT NULL DEFAULT 1,

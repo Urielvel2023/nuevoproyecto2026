@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE TABLE IF NOT EXISTS order_items (
   id TEXT PRIMARY KEY,
   order_id TEXT NOT NULL REFERENCES orders(id),
-  menu_item_id TEXT NOT NULL REFERENCES menu_items(id),
+  menu_item_id TEXT REFERENCES menu_items(id),
   name_snapshot TEXT NOT NULL,
   price_snapshot DOUBLE PRECISION NOT NULL,
   quantity INTEGER NOT NULL DEFAULT 1,

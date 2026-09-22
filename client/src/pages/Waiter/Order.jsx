@@ -21,7 +21,7 @@ export default function Order() {
   useEffect(() => {
     if (!socket) return;
     const onOrderChanged = (data) => { if (data.id === orderId) setOrder(data); };
-    const onOrderClosed = (data) => { if (data.id === orderId) navigate('/mesero/mesas'); };
+    const onOrderClosed = (data) => { if (data.id === orderId) navigate(data.channel === 'salon' ? '/mesero/mesas' : '/domicilios'); };
     const onMenuChanged = () => api.get('/menu/items').then(res => setMenuItems(res.data));
     socket.on('order:changed', onOrderChanged);
     socket.on('order:closed', onOrderClosed);
@@ -49,7 +49,7 @@ export default function Order() {
   async function closeOrder() {
     if (!confirm('¿Cerrar y cobrar esta cuenta?')) return;
     await api.post(`/orders/${orderId}/close`);
-    navigate('/mesero/mesas');
+    navigate(order.channel === 'salon' ? '/mesero/mesas' : '/domicilios');
   }
 
   if (!order) return <p>Cargando pedido...</p>;
@@ -57,8 +57,14 @@ export default function Order() {
   return (
     <div>
       <div className="topbar">
-        <h1>🍽️ {order.table_name}</h1>
-        <button className="btn secondary" onClick={() => navigate('/mesero/mesas')}>← Volver a mesas</button>
+        <h1>
+          {order.channel === 'salon'
+            ? `🍽️ ${order.table_name}`
+            : `🛵 ${order.customer_name || (order.channel === 'domicilio' ? 'Domicilio' : 'Recoger')}`}
+        </h1>
+        <button className="btn secondary" onClick={() => navigate(order.channel === 'salon' ? '/mesero/mesas' : '/domicilios')}>
+          ← Volver
+        </button>
       </div>
 
       {error && <div className="error-msg">{error}</div>}

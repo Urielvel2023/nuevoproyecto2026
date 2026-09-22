@@ -28,10 +28,16 @@ export default function Layout() {
               <NavLink to="/admin/personal">👥 Personal</NavLink>
               <NavLink to="/admin/nomina">🧑‍💼 Nómina</NavLink>
               <NavLink to="/mesero/mesas">🍽️ Mesas</NavLink>
+              <NavLink to="/domicilios">🛵 Domicilios</NavLink>
               <NavLink to="/cocina">👨‍🍳 Cocina</NavLink>
             </>
           )}
-          {user?.role === 'mesero' && <NavLink to="/mesero/mesas">🍽️ Mesas</NavLink>}
+          {user?.role === 'mesero' && (
+            <>
+              <NavLink to="/mesero/mesas">🍽️ Mesas</NavLink>
+              <NavLink to="/domicilios">🛵 Domicilios</NavLink>
+            </>
+          )}
           {user?.role === 'cocina' && <NavLink to="/cocina">👨‍🍳 Comanda</NavLink>}
           <button onClick={handleLogout}>🚪 Cerrar sesión</button>
         </nav>

@@ -71,4 +71,16 @@ async function insertOrderItem(t, { restaurantId, orderId, menuItem, quantity, u
   return { orderItemId, ingredients };
 }
 
-module.exports = { getOrderFull, createOrder, insertOrderItem };
+// Agrega un ítem "externo" reportado por una app de domicilios, sin
+// vincularlo a un menu_item propio (no hay descuento de inventario porque
+// no hay receta asociada). Se usa desde el webhook de plataformas externas.
+async function insertExternalOrderItem(t, { orderId, name, price, quantity }) {
+  const orderItemId = uuidv4();
+  await t.run(`
+    INSERT INTO order_items (id, order_id, menu_item_id, name_snapshot, price_snapshot, quantity)
+    VALUES (?, ?, NULL, ?, ?, ?)
+  `, [orderItemId, orderId, name, price, quantity]);
+  return { orderItemId };
+}
+
+module.exports = { getOrderFull, createOrder, insertOrderItem, insertExternalOrderItem };

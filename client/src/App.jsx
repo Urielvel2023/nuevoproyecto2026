@@ -14,6 +14,8 @@ import Payroll from './pages/Admin/Payroll';
 
 import WaiterTables from './pages/Waiter/Tables';
 import WaiterOrder from './pages/Waiter/Order';
+import Delivery from './pages/Delivery';
+import PublicOrder from './pages/PublicOrder';
 
 import Kitchen from './pages/Kitchen/Kitchen';
 
@@ -38,6 +40,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/pedido/:restaurantId" element={<PublicOrder />} />
         <Route path="/" element={<Protected><Layout /></Protected>}>
           <Route index element={<HomeRedirect />} />
 
@@ -52,6 +55,7 @@ export default function App() {
 
           <Route path="mesero/mesas" element={<Protected roles={['mesero', 'admin']}><WaiterTables /></Protected>} />
           <Route path="mesero/pedido/:orderId" element={<Protected roles={['mesero', 'admin']}><WaiterOrder /></Protected>} />
+          <Route path="domicilios" element={<Protected roles={['mesero', 'admin']}><Delivery /></Protected>} />
 
           <Route path="cocina" element={<Protected roles={['cocina', 'admin']}><Kitchen /></Protected>} />
         </Route>
