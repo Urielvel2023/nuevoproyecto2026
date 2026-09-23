@@ -1,0 +1,23 @@
+# Blueprint de Render: define automáticamente la base de datos PostgreSQL y
+# el servicio web, con las variables de entorno ya conectadas entre sí.
+# Para usarlo: en Render, "New +" → "Blueprint" → selecciona este repositorio.
+# No hace falta escribir ningún comando ni variable a mano.
+databases:
+  - name: restaurant-saas-db
+    plan: free
+
+services:
+  - type: web
+    name: restaurant-saas
+    env: node
+    plan: free
+    branch: main
+    buildCommand: npm install --prefix client && npm run build --prefix client && npm install --prefix server
+    startCommand: npm start --prefix server
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: restaurant-saas-db
+          property: connectionString
