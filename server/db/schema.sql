@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS restaurants (
   currency_symbol TEXT NOT NULL DEFAULT '$',
   tax_name TEXT NOT NULL DEFAULT 'IVA',    -- nombre del impuesto local
   tax_rate REAL NOT NULL DEFAULT 0,        -- porcentaje, ej 19 = 19%
+  service_charge_rate REAL NOT NULL DEFAULT 0, -- % de servicio opcional (ej. 10 en Colombia); 0 = desactivado, varía por país/negocio
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

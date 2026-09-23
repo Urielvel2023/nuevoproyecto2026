@@ -49,6 +49,7 @@ app.use('/api/accounting', require('./routes/accounting'));
 app.use('/api/payroll', require('./routes/payroll'));
 app.use('/api/delivery', require('./routes/delivery'));
 app.use('/api/billing', require('./routes/billing'));
+app.use('/api/settings', require('./routes/settings'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, db: db.kind }));
 

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS restaurants (
   currency_symbol TEXT NOT NULL DEFAULT '$',
   tax_name TEXT NOT NULL DEFAULT 'IVA',
   tax_rate DOUBLE PRECISION NOT NULL DEFAULT 0,
+  service_charge_rate DOUBLE PRECISION NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT to_char(now(), 'YYYY-MM-DD HH24:MI:SS')
 );
 

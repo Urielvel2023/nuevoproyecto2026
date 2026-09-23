@@ -37,6 +37,7 @@ if (usePostgres) {
   async function runMigrations() {
     await pool.query(`ALTER TABLE platform_subscriptions ADD COLUMN IF NOT EXISTS provider TEXT NOT NULL DEFAULT 'stripe'`);
     await pool.query(`ALTER TABLE platform_subscriptions ADD COLUMN IF NOT EXISTS external_reference TEXT`);
+    await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS service_charge_rate DOUBLE PRECISION NOT NULL DEFAULT 0`);
   }
 
   impl = {
@@ -105,6 +106,7 @@ if (usePostgres) {
   }
   ensureSqliteColumn('platform_subscriptions', `provider TEXT NOT NULL DEFAULT 'stripe'`);
   ensureSqliteColumn('platform_subscriptions', `external_reference TEXT`);
+  ensureSqliteColumn('restaurants', `service_charge_rate REAL NOT NULL DEFAULT 0`);
 
   impl = {
     kind: 'sqlite',

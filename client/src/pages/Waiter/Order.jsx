@@ -75,11 +75,17 @@ export default function Order() {
           <div className="menu-picker">
             {menuItems.map(item => (
               <div key={item.id} className={`item ${!item.available ? 'unavailable' : ''}`}
-                onClick={() => item.available && addItem(item)}>
-                <strong>{item.name}</strong>
-                <div style={{ fontSize: 12, color: '#6b7280' }}>{item.category_name || 'Sin categoría'}</div>
-                <div style={{ fontWeight: 600, marginTop: 4 }}>{item.price.toFixed(2)}</div>
-                {!item.available && <span className="badge red">Agotado</span>}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <div>
+                  <strong>{item.name}</strong>
+                  <div style={{ fontSize: 12, color: '#6b7280' }}>{item.category_name || 'Sin categoría'}</div>
+                  <div style={{ fontWeight: 600, marginTop: 4 }}>{item.price.toFixed(2)}</div>
+                  {!item.available && <span className="badge red">Agotado</span>}
+                </div>
+                <button type="button" className="btn small" disabled={!item.available}
+                  onClick={() => addItem(item)}>
+                  + Agregar
+                </button>
               </div>
             ))}
             {menuItems.length === 0 && <p>No hay ítems en el menú aún.</p>}
@@ -108,6 +114,12 @@ export default function Order() {
               {order.items.length === 0 && <tr><td colSpan="5">Aún no hay ítems en esta cuenta.</td></tr>}
             </tbody>
           </table>
+          <div style={{ textAlign: 'right', color: '#6b7280', fontSize: 14 }}>
+            <div>Subtotal: {order.items_total.toFixed(2)}</div>
+            {order.service_charge_rate > 0 &&
+              <div>Servicio ({order.service_charge_rate}%): {order.service_charge.toFixed(2)}</div>}
+            {order.delivery_fee > 0 && <div>Domicilio: {order.delivery_fee.toFixed(2)}</div>}
+          </div>
           <h2 style={{ textAlign: 'right' }}>Total: {order.total.toFixed(2)}</h2>
           <button className="btn" style={{ width: '100%' }} onClick={closeOrder} disabled={order.items.length === 0}>
             Cerrar y cobrar cuenta

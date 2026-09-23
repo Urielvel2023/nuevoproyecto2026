@@ -9,14 +9,20 @@ async function getOrderFull(db, orderId, restaurantId) {
   const items = await db.all('SELECT * FROM order_items WHERE order_id = ? ORDER BY created_at', [orderId]);
   const table = order.table_id ? await db.get('SELECT * FROM tables WHERE id = ?', [order.table_id]) : null;
   const waiter = order.waiter_id ? await db.get('SELECT name FROM users WHERE id = ?', [order.waiter_id]) : null;
+  const restaurant = await db.get('SELECT service_charge_rate FROM restaurants WHERE id = ?', [restaurantId]);
   const itemsTotal = items.reduce((sum, i) => sum + i.price_snapshot * i.quantity, 0);
+  // % de servicio opcional (varía por país/negocio; 0 si el restaurante no lo activó)
+  const serviceChargeRate = (restaurant && restaurant.service_charge_rate) || 0;
+  const serviceCharge = Math.round(itemsTotal * (serviceChargeRate / 100) * 100) / 100;
   return {
     ...order,
     table_name: table ? table.name : null,
     waiter_name: waiter ? waiter.name : null,
     items,
     items_total: itemsTotal,
-    total: itemsTotal + (order.delivery_fee || 0)
+    service_charge_rate: serviceChargeRate,
+    service_charge: serviceCharge,
+    total: itemsTotal + serviceCharge + (order.delivery_fee || 0)
   };
 }
 

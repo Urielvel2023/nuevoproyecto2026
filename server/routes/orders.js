@@ -61,10 +61,14 @@ router.post('/', requireRole('mesero', 'admin'), ah(async (req, res) => {
 // Últimas cuentas cerradas, indicando si ya tienen documento fiscal emitido
 // (usado por la pantalla de Facturación para elegir qué cuenta facturar)
 router.get('/recent-closed', requireRole('admin'), ah(async (req, res) => {
+  const restaurant = await db.get('SELECT service_charge_rate FROM restaurants WHERE id = ?', [req.user.restaurant_id]);
+  const serviceChargeRate = (restaurant && restaurant.service_charge_rate) || 0;
+
   const rows = await db.all(`
     SELECT o.id, o.table_id, o.channel, o.customer_name, o.closed_at,
            t.name as table_name,
-           COALESCE(SUM(oi.price_snapshot * oi.quantity), 0) + o.delivery_fee as total,
+           COALESCE(SUM(oi.price_snapshot * oi.quantity), 0) as items_total,
+           o.delivery_fee,
            (SELECT full_number FROM tax_documents td WHERE td.order_id = o.id AND td.status != 'rechazada' LIMIT 1) as invoice_number
     FROM orders o
     LEFT JOIN tables t ON t.id = o.table_id
@@ -73,7 +77,11 @@ router.get('/recent-closed', requireRole('admin'), ah(async (req, res) => {
     GROUP BY o.id, o.table_id, o.channel, o.customer_name, o.closed_at, t.name, o.delivery_fee
     ORDER BY o.closed_at DESC LIMIT 50
   `, [req.user.restaurant_id]);
-  res.json(rows);
+
+  res.json(rows.map(r => ({
+    ...r,
+    total: r.items_total + Math.round(r.items_total * (serviceChargeRate / 100) * 100) / 100 + r.delivery_fee
+  })));
 }));
 
 router.get('/:id', ah(async (req, res) => {
