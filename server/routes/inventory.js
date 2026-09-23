@@ -57,7 +57,35 @@ router.put('/:id', requireRole('admin'), ah(async (req, res) => {
   res.json(updated);
 }));
 
-// Registrar entrada o ajuste de stock (movimiento)
+// Eliminar un producto del almacén. Se bloquea si está siendo usado en
+// alguna receta (para no romper el costeo de esos platos/bebidas); el
+// historial de movimientos del producto se borra junto con él.
+router.delete('/:id', requireRole('admin'), ah(async (req, res) => {
+  const item = await db.get('SELECT * FROM inventory_items WHERE id = ? AND restaurant_id = ?',
+    [req.params.id, req.user.restaurant_id]);
+  if (!item) return res.status(404).json({ error: 'No encontrado' });
+
+  const usedIn = await db.all(`
+    SELECT DISTINCT r.name FROM recipe_ingredients ri
+    JOIN recipes r ON r.id = ri.recipe_id
+    WHERE ri.inventory_item_id = ?
+  `, [item.id]);
+  if (usedIn.length > 0) {
+    return res.status(409).json({
+      error: `No se puede eliminar: "${item.name}" se usa en la(s) receta(s): ${usedIn.map(r => r.name).join(', ')}. Quítalo de esas recetas primero.`
+    });
+  }
+
+  await db.tx(async (t) => {
+    await t.run('DELETE FROM inventory_movements WHERE item_id = ?', [item.id]);
+    await t.run('DELETE FROM inventory_items WHERE id = ?', [item.id]);
+  });
+
+  req.app.get('io').to(req.user.restaurant_id).emit('inventory:deleted', { id: item.id });
+  res.json({ ok: true });
+}));
+
+// Registrar entrada, salida o ajuste de stock (movimiento)
 router.post('/:id/movement', requireRole('admin'), ah(async (req, res) => {
   const { type, quantity, reason } = req.body; // type: entrada | salida | ajuste
   const item = await db.get('SELECT * FROM inventory_items WHERE id = ? AND restaurant_id = ?',
@@ -66,8 +94,16 @@ router.post('/:id/movement', requireRole('admin'), ah(async (req, res) => {
   if (!['entrada', 'salida', 'ajuste'].includes(type)) {
     return res.status(400).json({ error: 'Tipo de movimiento inválido' });
   }
+  if (!quantity) return res.status(400).json({ error: 'La cantidad es requerida' });
 
-  const delta = type === 'salida' ? -Math.abs(quantity) : Math.abs(quantity);
+  // "entrada" siempre suma y "salida" siempre resta, sin importar el signo
+  // que se escriba. "ajuste" respeta el signo tal cual (positivo suma,
+  // negativo resta), para poder corregir el stock en cualquier dirección.
+  let delta;
+  if (type === 'entrada') delta = Math.abs(quantity);
+  else if (type === 'salida') delta = -Math.abs(quantity);
+  else delta = Number(quantity);
+
   await db.tx(async (t) => {
     await t.run(`
       INSERT INTO inventory_movements (id, restaurant_id, item_id, type, quantity, reason, created_by)
