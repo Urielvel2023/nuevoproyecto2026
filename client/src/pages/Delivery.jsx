@@ -114,7 +114,7 @@ export default function Delivery() {
                   <td>{o.total.toFixed(2)}</td>
                   <td><span className="badge gray">{STATUS_LABELS[o.delivery_status] || o.delivery_status}</span></td>
                   <td>
-                    <a href={`/mesero/pedido/${o.id}`} className="btn small secondary">Ver</a>
+                    <a href={`/app/mesero/pedido/${o.id}`} className="btn small secondary">Ver</a>
                     {NEXT_STATUS[o.delivery_status] && (
                       <button className="btn small" style={{ marginLeft: 6 }} onClick={() => updateStatus(o.id, NEXT_STATUS[o.delivery_status])}>
                         → {STATUS_LABELS[NEXT_STATUS[o.delivery_status]]}

@@ -3,6 +3,10 @@ import { useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Layout from './Layout';
 
+import Landing from './pages/Landing';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+
 import Inventory from './pages/Admin/Inventory';
 import Recipes from './pages/Admin/Recipes';
 import Menu from './pages/Admin/Menu';
@@ -23,16 +27,16 @@ import Kitchen from './pages/Kitchen/Kitchen';
 function Protected({ roles, children }) {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  if (roles && !roles.includes(user.role)) return <Navigate to="/" replace />;
+  if (roles && !roles.includes(user.role)) return <Navigate to="/app" replace />;
   return children;
 }
 
 function HomeRedirect() {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role === 'admin') return <Navigate to="/admin/inventario" replace />;
-  if (user.role === 'mesero') return <Navigate to="/mesero/mesas" replace />;
-  if (user.role === 'cocina') return <Navigate to="/cocina" replace />;
+  if (user.role === 'admin') return <Navigate to="/app/admin/inventario" replace />;
+  if (user.role === 'mesero') return <Navigate to="/app/mesero/mesas" replace />;
+  if (user.role === 'cocina') return <Navigate to="/app/cocina" replace />;
   return <Navigate to="/login" replace />;
 }
 
@@ -40,9 +44,12 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/terminos" element={<Terms />} />
+        <Route path="/privacidad" element={<Privacy />} />
         <Route path="/login" element={<Login />} />
         <Route path="/pedido/:restaurantId" element={<PublicOrder />} />
-        <Route path="/" element={<Protected><Layout /></Protected>}>
+        <Route path="/app" element={<Protected><Layout /></Protected>}>
           <Route index element={<HomeRedirect />} />
 
           <Route path="admin/inventario" element={<Protected roles={['admin']}><Inventory /></Protected>} />

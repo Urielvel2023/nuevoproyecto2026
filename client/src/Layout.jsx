@@ -19,27 +19,27 @@ export default function Layout() {
         <nav>
           {user?.role === 'admin' && (
             <>
-              <NavLink to="/admin/inventario">📦 Almacén</NavLink>
-              <NavLink to="/admin/recetas">📋 Recetas / Costeo</NavLink>
-              <NavLink to="/admin/menu">🍔 Menú</NavLink>
-              <NavLink to="/admin/reportes">📊 Reportes</NavLink>
-              <NavLink to="/admin/facturacion">🧾 Facturación</NavLink>
-              <NavLink to="/admin/contabilidad">💰 Contabilidad</NavLink>
-              <NavLink to="/admin/personal">👥 Personal</NavLink>
-              <NavLink to="/admin/nomina">🧑‍💼 Nómina</NavLink>
-              <NavLink to="/admin/suscripcion">💳 Suscripción</NavLink>
-              <NavLink to="/mesero/mesas">🍽️ Mesas</NavLink>
-              <NavLink to="/domicilios">🛵 Domicilios</NavLink>
-              <NavLink to="/cocina">👨‍🍳 Cocina</NavLink>
+              <NavLink to="/app/admin/inventario">📦 Almacén</NavLink>
+              <NavLink to="/app/admin/recetas">📋 Recetas / Costeo</NavLink>
+              <NavLink to="/app/admin/menu">🍔 Menú</NavLink>
+              <NavLink to="/app/admin/reportes">📊 Reportes</NavLink>
+              <NavLink to="/app/admin/facturacion">🧾 Facturación</NavLink>
+              <NavLink to="/app/admin/contabilidad">💰 Contabilidad</NavLink>
+              <NavLink to="/app/admin/personal">👥 Personal</NavLink>
+              <NavLink to="/app/admin/nomina">🧑‍💼 Nómina</NavLink>
+              <NavLink to="/app/admin/suscripcion">💳 Suscripción</NavLink>
+              <NavLink to="/app/mesero/mesas">🍽️ Mesas</NavLink>
+              <NavLink to="/app/domicilios">🛵 Domicilios</NavLink>
+              <NavLink to="/app/cocina">👨‍🍳 Cocina</NavLink>
             </>
           )}
           {user?.role === 'mesero' && (
             <>
-              <NavLink to="/mesero/mesas">🍽️ Mesas</NavLink>
-              <NavLink to="/domicilios">🛵 Domicilios</NavLink>
+              <NavLink to="/app/mesero/mesas">🍽️ Mesas</NavLink>
+              <NavLink to="/app/domicilios">🛵 Domicilios</NavLink>
             </>
           )}
-          {user?.role === 'cocina' && <NavLink to="/cocina">👨‍🍳 Comanda</NavLink>}
+          {user?.role === 'cocina' && <NavLink to="/app/cocina">👨‍🍳 Comanda</NavLink>}
           <button onClick={handleLogout}>🚪 Cerrar sesión</button>
         </nav>
       </div>

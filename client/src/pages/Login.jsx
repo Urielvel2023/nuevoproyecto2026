@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
@@ -16,7 +16,8 @@ const COUNTRIES = [
 ];
 
 export default function Login() {
-  const [mode, setMode] = useState('login');
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState(searchParams.get('registro') ? 'register' : 'login');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -33,7 +34,7 @@ export default function Login() {
     try {
       const { data } = await axios.post('/api/auth/login', loginForm);
       login(data.token, data.user);
-      navigate('/');
+      navigate('/app');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al iniciar sesión');
     } finally {
@@ -54,7 +55,7 @@ export default function Login() {
         taxRate: c.rate
       });
       login(data.token, data.user);
-      navigate('/');
+      navigate('/app');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al registrar');
     } finally {
@@ -65,6 +66,7 @@ export default function Login() {
   return (
     <div className="login-wrap">
       <div className="login-box">
+        <Link to="/" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none' }}>← Volver al inicio</Link>
         <h1>🍽️ Restaurant SaaS</h1>
         <div className="tab-switch">
           <button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>Iniciar sesión</button>

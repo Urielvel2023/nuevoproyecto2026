@@ -23,11 +23,11 @@ export default function Tables() {
 
   async function openTable(table) {
     if (table.open_order_id) {
-      navigate(`/mesero/pedido/${table.open_order_id}`);
+      navigate(`/app/mesero/pedido/${table.open_order_id}`);
       return;
     }
     const { data } = await api.post('/orders', { table_id: table.id });
-    navigate(`/mesero/pedido/${data.id}`);
+    navigate(`/app/mesero/pedido/${data.id}`);
   }
 
   return (
