@@ -3,12 +3,19 @@ const db = require('../db');
 const { authMiddleware, requireRole } = require('../auth');
 const ah = require('../utils/asyncHandler');
 const { PLANS, getStripe, mapStripeStatus, getOrCreateSubscription } = require('../services/billing');
+const wompi = require('../services/wompi');
 
 const router = express.Router();
 
 router.get('/plans', (req, res) => {
+  const wompiReady = wompi.isConfigured();
   res.json(Object.entries(PLANS).map(([id, p]) => ({
-    id, name: p.name, configured: !!process.env[p.priceEnvVar]
+    id,
+    name: p.name,
+    configured: !!process.env[p.priceEnvVar] || wompiReady,
+    stripe_configured: !!process.env[p.priceEnvVar],
+    wompi_configured: wompiReady,
+    wompi_price_cop: Number(process.env[p.wompiPriceEnvVar] || p.wompiDefaultCOP)
   })));
 });
 
@@ -73,10 +80,74 @@ router.post('/webhook', ah(async (req, res) => {
   res.json({ received: true });
 }));
 
+// Webhook de Wompi: sin autenticación (Wompi lo llama directamente), pero
+// verificado con la firma que Wompi incluye en cada evento. A diferencia del
+// webhook de Stripe, este sí recibe JSON ya parseado (Wompi no exige body
+// crudo), por eso vive en una ruta distinta a /webhook.
+router.post('/wompi/webhook', ah(async (req, res) => {
+  let eventsSecret;
+  try {
+    eventsSecret = wompi.getConfig().eventsSecret;
+  } catch (e) {
+    return res.status(501).json({ error: e.message });
+  }
+  if (!eventsSecret) return res.status(501).json({ error: 'Falta configurar WOMPI_EVENTS_SECRET' });
+
+  if (!wompi.verifyEventSignature(req.body, eventsSecret)) {
+    return res.status(400).json({ error: 'Firma de webhook inválida' });
+  }
+
+  const transaction = req.body?.data?.transaction;
+  if (transaction && transaction.status === 'APPROVED' && transaction.reference) {
+    // Referencia con formato sub_<restaurantId>_<plan>_<timestamp>
+    const parts = transaction.reference.split('_');
+    if (parts[0] === 'sub' && parts.length >= 3) {
+      const restaurantId = parts[1];
+      const plan = PLANS[parts[2]] ? parts[2] : 'starter';
+      const currentPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      await getOrCreateSubscription(restaurantId);
+      await db.run(`
+        UPDATE platform_subscriptions SET
+          plan = ?, status = 'active', provider = 'wompi',
+          external_reference = ?, current_period_end = ?, updated_at = ?
+        WHERE restaurant_id = ?
+      `, [plan, transaction.reference, currentPeriodEnd, db.nowIso(), restaurantId]);
+    }
+  }
+
+  res.json({ received: true });
+}));
+
 router.use(authMiddleware);
 
 router.get('/subscription', requireRole('admin'), ah(async (req, res) => {
   res.json(await getOrCreateSubscription(req.user.restaurant_id));
+}));
+
+// Genera un link de pago de Wompi (Web Checkout) para pagar/renovar la
+// suscripción. Cada pago aprobado activa la suscripción por 30 días.
+router.post('/checkout-wompi', requireRole('admin'), ah(async (req, res) => {
+  const { plan } = req.body;
+  const planDef = PLANS[plan];
+  if (!planDef) return res.status(400).json({ error: 'Plan inválido' });
+
+  const priceCOP = Number(process.env[planDef.wompiPriceEnvVar] || planDef.wompiDefaultCOP);
+  const appUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+  const reference = `sub_${req.user.restaurant_id}_${plan}_${Date.now()}`;
+
+  const url = wompi.buildCheckoutUrl({
+    amountInCents: priceCOP * 100,
+    currency: 'COP',
+    reference,
+    redirectUrl: `${appUrl}/admin/suscripcion?checkout=wompi`,
+    customerEmail: req.user.email
+  });
+
+  await db.run('UPDATE platform_subscriptions SET external_reference = ? WHERE restaurant_id = ?',
+    [reference, req.user.restaurant_id]);
+
+  res.json({ url });
 }));
 
 router.post('/checkout-session', requireRole('admin'), ah(async (req, res) => {

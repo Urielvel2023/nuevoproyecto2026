@@ -22,13 +22,23 @@ export default function Subscription() {
   }
   useEffect(() => { load(); }, []);
 
-  async function subscribe(planId) {
+  async function subscribeStripe(planId) {
     setError(''); setLoading(true);
     try {
       const { data } = await api.post('/billing/checkout-session', { plan: planId });
       window.location.href = data.url;
     } catch (err) {
       setError(err.response?.data?.error || 'No se pudo iniciar el pago');
+    } finally { setLoading(false); }
+  }
+
+  async function subscribeWompi(planId) {
+    setError(''); setLoading(true);
+    try {
+      const { data } = await api.post('/billing/checkout-wompi', { plan: planId });
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err.response?.data?.error || 'No se pudo iniciar el pago con Wompi');
     } finally { setLoading(false); }
   }
 
@@ -62,26 +72,43 @@ export default function Subscription() {
         {sub.current_period_end && (
           <p style={{ color: '#6b7280' }}>Próxima renovación: {sub.current_period_end.slice(0, 10)}</p>
         )}
+        {sub.provider === 'wompi' && sub.status === 'active' && (
+          <p style={{ color: '#6b7280', fontSize: 13 }}>
+            Pagado con Wompi. Wompi no renueva automáticamente: vuelve a esta página antes de la fecha de renovación
+            para pagar el siguiente período.
+          </p>
+        )}
         {sub.stripe_customer_id && (
-          <button className="btn small secondary" disabled={loading} onClick={openPortal}>Gestionar suscripción / método de pago</button>
+          <button className="btn small secondary" disabled={loading} onClick={openPortal}>Gestionar suscripción / método de pago (Stripe)</button>
         )}
       </div>
 
       <div className="card">
         <h3>Planes disponibles</h3>
-        {plans.every(p => !p.configured) && (
+        {plans.every(p => !p.stripe_configured && !p.wompi_configured) && (
           <p style={{ color: '#6b7280' }}>
-            El cobro de suscripción aún no está configurado (faltan las llaves de Stripe en el servidor).
+            El cobro de suscripción aún no está configurado (faltan las llaves de Stripe o Wompi en el servidor).
           </p>
         )}
         <div className="grid grid-2">
           {plans.map(p => (
             <div key={p.id} className="card" style={{ border: sub.plan === p.id ? '2px solid #2f6feb' : undefined }}>
               <h4>{p.name}</h4>
-              {!p.configured && <p style={{ color: '#ef4444', fontSize: 13 }}>Precio no configurado aún</p>}
-              <button className="btn small" disabled={loading || !p.configured || sub.plan === p.id} onClick={() => subscribe(p.id)}>
-                {sub.plan === p.id ? 'Plan actual' : 'Suscribirme'}
-              </button>
+              {p.wompi_configured && (
+                <p style={{ fontWeight: 600, marginBottom: 8 }}>${p.wompi_price_cop.toLocaleString('es-CO')} COP/mes</p>
+              )}
+              {!p.stripe_configured && !p.wompi_configured && <p style={{ color: '#ef4444', fontSize: 13 }}>Precio no configurado aún</p>}
+
+              {p.wompi_configured && (
+                <button className="btn small" style={{ marginRight: 8 }} disabled={loading} onClick={() => subscribeWompi(p.id)}>
+                  {sub.plan === p.id && sub.status === 'active' ? 'Renovar con Wompi' : 'Pagar con Wompi'}
+                </button>
+              )}
+              {p.stripe_configured && (
+                <button className="btn small secondary" disabled={loading} onClick={() => subscribeStripe(p.id)}>
+                  Pagar con Stripe
+                </button>
+              )}
             </div>
           ))}
         </div>

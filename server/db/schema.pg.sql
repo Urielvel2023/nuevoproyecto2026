@@ -276,8 +276,10 @@ CREATE TABLE IF NOT EXISTS platform_subscriptions (
   restaurant_id TEXT PRIMARY KEY REFERENCES restaurants(id),
   plan TEXT NOT NULL DEFAULT 'trial' CHECK (plan IN ('trial','starter','pro')),
   status TEXT NOT NULL DEFAULT 'trialing' CHECK (status IN ('trialing','active','past_due','canceled')),
+  provider TEXT NOT NULL DEFAULT 'stripe',   -- 'stripe' | 'wompi'
   stripe_customer_id TEXT,
   stripe_subscription_id TEXT,
+  external_reference TEXT,                   -- referencia de la transacción/checkout (Wompi)
   trial_ends_at TEXT,
   current_period_end TEXT,
   updated_at TEXT NOT NULL DEFAULT to_char(now(), 'YYYY-MM-DD HH24:MI:SS')

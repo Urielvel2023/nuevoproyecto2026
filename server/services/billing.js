@@ -1,16 +1,28 @@
 // Suscripción SaaS: cobro periódico a cada restaurante por usar la
 // plataforma (distinto de la facturación electrónica, que es el restaurante
-// facturándole a SUS clientes). Usa Stripe Checkout + Billing Portal.
+// facturándole a SUS clientes). Soporta dos pasarelas intercambiables:
+// Stripe Checkout + Billing Portal (internacional), o Wompi Web Checkout
+// (Colombia, ver services/wompi.js) para negocios que no pueden recibir
+// pagos con Stripe.
 //
-// Requiere que el dueño de la plataforma tenga su propia cuenta de Stripe y
-// configure STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET y los IDs de precio de
-// cada plan (ver PLANS abajo) como variables de entorno. Sin esas variables,
-// el sistema sigue funcionando normalmente: solo no se puede cobrar todavía.
+// Requiere que el dueño de la plataforma configure las variables de la
+// pasarela que vaya a usar (ver README). Sin esas variables, el sistema
+// sigue funcionando normalmente: solo no se puede cobrar todavía.
 const db = require('../db');
 
 const PLANS = {
-  starter: { name: 'Starter', priceEnvVar: 'STRIPE_PRICE_ID_STARTER' },
-  pro: { name: 'Pro', priceEnvVar: 'STRIPE_PRICE_ID_PRO' }
+  starter: {
+    name: 'Starter',
+    priceEnvVar: 'STRIPE_PRICE_ID_STARTER',
+    wompiPriceEnvVar: 'WOMPI_PRICE_STARTER',
+    wompiDefaultCOP: 49000
+  },
+  pro: {
+    name: 'Pro',
+    priceEnvVar: 'STRIPE_PRICE_ID_PRO',
+    wompiPriceEnvVar: 'WOMPI_PRICE_PRO',
+    wompiDefaultCOP: 99000
+  }
 };
 
 let stripeClient = null;
