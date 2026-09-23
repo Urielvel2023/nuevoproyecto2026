@@ -13,15 +13,18 @@ export default function Terms() {
 
       <div className="legal-doc">
         <h1>Términos y Condiciones</h1>
-        <p className="updated">Última actualización: <span className="placeholder">[completa la fecha]</span></p>
+        <p className="updated">Última actualización: 23 de septiembre de 2026</p>
 
         <p>
           Estos Términos y Condiciones ("Términos") regulan el acceso y uso de la plataforma
-          <span className="placeholder"> [nombre de tu negocio/marca]</span> (el "Servicio"), un software como
-          servicio (SaaS) para la gestión de restaurantes y bares, operado por
-          <span className="placeholder"> [tu nombre o razón social]</span>, identificado con
-          <span className="placeholder"> [NIT/cédula]</span> ("nosotros", "la Plataforma"). Al registrarte o usar
-          el Servicio aceptas estos Términos en su totalidad.
+          Restaurant SaaS (el "Servicio"), un software como servicio (SaaS) para la gestión de restaurantes y
+          bares, operado por Uriel Alexander Velandia Vera, persona natural
+          (<span className="placeholder">[cédula/NIT — actualiza cuando registres tu negocio]</span>)
+          ("nosotros", "la Plataforma"). Al registrarte o usar el Servicio aceptas estos Términos en su
+          totalidad.
+        </p>
+        <p>
+          <strong>Contacto:</strong> urielvel2023@gmail.com · WhatsApp +57 300 699 9364
         </p>
 
         <h2>1. Descripción del servicio</h2>
@@ -60,7 +63,7 @@ export default function Terms() {
           La información que cargas al Servicio (inventario, ventas, empleados, clientes, documentos fiscales,
           etc.) es tuya. La usamos únicamente para prestarte el Servicio, según se describe en nuestra
           <Link to="/privacidad"> Política de Privacidad</Link>. Puedes solicitar una exportación o eliminación
-          de tus datos escribiendo a <span className="placeholder">[correo de contacto]</span>.
+          de tus datos escribiendo a urielvel2023@gmail.com o por WhatsApp al +57 300 699 9364.
         </p>
 
         <h2>6. Facturación electrónica y responsabilidad fiscal</h2>
@@ -100,13 +103,13 @@ export default function Terms() {
 
         <h2>11. Ley aplicable</h2>
         <p>
-          Estos Términos se rigen por las leyes de <span className="placeholder">[Colombia / tu país]</span>.
+          Estos Términos se rigen por las leyes de Colombia.
           Cualquier disputa se resolverá ante los jueces competentes de dicha jurisdicción.
         </p>
 
         <h2>12. Contacto</h2>
         <p>
-          Para preguntas sobre estos Términos, escríbenos a <span className="placeholder">[correo de contacto]</span>.
+          Para preguntas sobre estos Términos, escríbenos a urielvel2023@gmail.com o por WhatsApp al +57 300 699 9364.
         </p>
 
         <p style={{ marginTop: 40, fontSize: 12, color: '#9ca3af' }}>

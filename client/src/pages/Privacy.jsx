@@ -13,21 +13,21 @@ export default function Privacy() {
 
       <div className="legal-doc">
         <h1>Política de Privacidad y Tratamiento de Datos</h1>
-        <p className="updated">Última actualización: <span className="placeholder">[completa la fecha]</span></p>
+        <p className="updated">Última actualización: 23 de septiembre de 2026</p>
 
         <p>
-          Esta política describe cómo <span className="placeholder">[tu nombre o razón social]</span>
+          Esta política describe cómo Uriel Alexander Velandia Vera
           ("nosotros") recolecta, usa, almacena y protege los datos personales de quienes usan
-          <span className="placeholder"> [nombre de tu negocio/marca]</span> (el "Servicio"), en cumplimiento de
+          Restaurant SaaS (el "Servicio"), en cumplimiento de
           la Ley 1581 de 2012 y el Decreto 1377 de 2013 de Colombia (régimen de Protección de Datos Personales /
           Habeas Data), y de la normativa equivalente de otros países donde operes.
         </p>
 
         <h2>1. Responsable del tratamiento</h2>
         <p>
-          <span className="placeholder">[Tu nombre o razón social]</span>, identificado con
-          <span className="placeholder"> [NIT/cédula]</span>, con contacto en
-          <span className="placeholder"> [correo de contacto]</span>, es responsable del tratamiento de los datos
+          Uriel Alexander Velandia Vera, persona natural
+          (<span className="placeholder">[cédula/NIT — actualiza cuando registres tu negocio]</span>), con contacto en
+          urielvel2023@gmail.com o por WhatsApp al +57 300 699 9364, es responsable del tratamiento de los datos
           personales descritos en esta política.
         </p>
 
@@ -50,8 +50,8 @@ export default function Privacy() {
 
         <h2>4. Cómo almacenamos y protegemos los datos</h2>
         <p>
-          Los datos se almacenan en una base de datos administrada (PostgreSQL, alojada en
-          <span className="placeholder"> [tu proveedor de hosting, ej. Render]</span>). Las contraseñas se
+          Los datos se almacenan en una base de datos administrada (PostgreSQL, alojada en Render).
+          Las contraseñas se
           protegen con hash (bcrypt) y las sesiones usan tokens firmados (JWT) con expiración. Aplicamos
           controles de acceso para que cada restaurante solo pueda ver sus propios datos (aislamiento
           multi-tenant).
@@ -78,7 +78,7 @@ export default function Privacy() {
 
         <h2>7. Cómo ejercer tus derechos</h2>
         <p>
-          Puedes ejercer estos derechos escribiendo a <span className="placeholder">[correo de contacto]</span>.
+          Puedes ejercer estos derechos escribiendo a urielvel2023@gmail.com o por WhatsApp al +57 300 699 9364.
           Responderemos tu solicitud dentro de los plazos que exige la ley aplicable.
         </p>
 
@@ -103,7 +103,7 @@ export default function Privacy() {
 
         <h2>11. Contacto</h2>
         <p>
-          Para preguntas sobre el tratamiento de tus datos, escríbenos a <span className="placeholder">[correo de contacto]</span>.
+          Para preguntas sobre el tratamiento de tus datos, escríbenos a urielvel2023@gmail.com o por WhatsApp al +57 300 699 9364.
         </p>
 
         <p style={{ marginTop: 40, fontSize: 12, color: '#9ca3af' }}>
