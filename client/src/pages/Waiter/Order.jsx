@@ -74,17 +74,15 @@ export default function Order() {
           <h3>Menú disponible</h3>
           <div className="menu-picker">
             {menuItems.map(item => (
-              <div key={item.id} className={`item ${!item.available ? 'unavailable' : ''}`}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <div>
-                  <strong>{item.name}</strong>
-                  <div style={{ fontSize: 12, color: '#6b7280' }}>{item.category_name || 'Sin categoría'}</div>
-                  <div style={{ fontWeight: 600, marginTop: 4 }}>{item.price.toFixed(2)}</div>
-                  {!item.available && <span className="badge red">Agotado</span>}
-                </div>
-                <button type="button" className="btn small" disabled={!item.available}
+              <div key={item.id} className={`item ${!item.available ? 'unavailable' : ''}`}>
+                <strong>{item.name}</strong>
+                <div style={{ fontSize: 12, color: '#6b7280' }}>{item.category_name || 'Sin categoría'}</div>
+                <div style={{ fontWeight: 600, marginTop: 4 }}>{item.price.toFixed(2)}</div>
+                {!item.available && <span className="badge red">Agotado</span>}
+                <button type="button" className="btn" disabled={!item.available}
+                  style={{ width: '100%', marginTop: 8 }}
                   onClick={() => addItem(item)}>
-                  + Agregar
+                  + Agregar a la cuenta
                 </button>
               </div>
             ))}
