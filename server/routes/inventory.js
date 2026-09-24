@@ -33,6 +33,36 @@ router.post('/', requireRole('admin'), ah(async (req, res) => {
   res.json(item);
 }));
 
+// Crear varios productos de una sola vez (pegar una lista). Cada ítem se
+// crea igual que en POST '/', ignorando los que no traigan nombre; no falla
+// todo el lote por un renglón inválido.
+router.post('/bulk', requireRole('admin'), ah(async (req, res) => {
+  const { items } = req.body;
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'No se recibió ninguna lista de productos' });
+  }
+
+  const created = await db.tx(async (t) => {
+    const rows = [];
+    for (const raw of items) {
+      const name = (raw.name || '').trim();
+      if (!name) continue;
+      const id = uuidv4();
+      await t.run(`
+        INSERT INTO inventory_items (id, restaurant_id, name, category, unit, stock, min_stock, unit_cost, supplier)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [id, req.user.restaurant_id, name, raw.category || 'general', raw.unit || 'unidad',
+          raw.stock || 0, raw.min_stock || 0, raw.unit_cost || 0, raw.supplier || null]);
+      rows.push(await t.get('SELECT * FROM inventory_items WHERE id = ?', [id]));
+    }
+    return rows;
+  });
+
+  const io = req.app.get('io');
+  for (const item of created) io.to(req.user.restaurant_id).emit('inventory:changed', item);
+  res.json({ created: created.length, items: created });
+}));
+
 // Actualizar producto (incluye actualizar costo unitario -> recalcula costos de recetas al vuelo)
 router.put('/:id', requireRole('admin'), ah(async (req, res) => {
   const item = await db.get('SELECT * FROM inventory_items WHERE id = ? AND restaurant_id = ?',
