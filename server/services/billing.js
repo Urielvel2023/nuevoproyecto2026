@@ -8,6 +8,13 @@
 // el sistema sigue funcionando normalmente: solo no se puede cobrar todavía.
 const db = require('../db');
 
+// Días de prueba gratuita para cada restaurante nuevo (configurable con TRIAL_DAYS)
+const TRIAL_DAYS = Math.max(1, parseInt(process.env.TRIAL_DAYS, 10) || 28);
+
+function trialEndDate() {
+  return new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
+
 const PLANS = {
   starter: { name: 'Starter', priceEnvVar: 'STRIPE_PRICE_ID_STARTER' },
   pro: { name: 'Pro', priceEnvVar: 'STRIPE_PRICE_ID_PRO' }
@@ -33,7 +40,7 @@ function mapStripeStatus(stripeStatus) {
 async function getOrCreateSubscription(restaurantId) {
   let sub = await db.get('SELECT * FROM platform_subscriptions WHERE restaurant_id = ?', [restaurantId]);
   if (!sub) {
-    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    const trialEndsAt = trialEndDate();
     await db.run(`
       INSERT INTO platform_subscriptions (restaurant_id, plan, status, trial_ends_at)
       VALUES (?, 'trial', 'trialing', ?)
@@ -64,4 +71,4 @@ async function requireActiveSubscription(req, res, next) {
   }
 }
 
-module.exports = { PLANS, getStripe, mapStripeStatus, getOrCreateSubscription, requireActiveSubscription };
+module.exports = { TRIAL_DAYS, trialEndDate, PLANS, getStripe, mapStripeStatus, getOrCreateSubscription, requireActiveSubscription };

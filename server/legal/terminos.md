@@ -24,7 +24,7 @@ Los datos que el cliente carga (recetas, ventas, personal, clientes) son del cli
 El proveedor realiza respaldos periódicos de la base de datos. El cliente debe contar con internet de respaldo y procedimientos de contingencia para el servicio en sala.
 
 ## 6. Pagos y cancelación
-La suscripción incluye un período de prueba de 14 días. Al terminar, se cobra el plan elegido de forma recurrente. El cliente puede cancelar en cualquier momento; la cancelación surte efecto al final del período pagado.
+La suscripción incluye un período de prueba de 28 días. Al terminar, se cobra el plan elegido de forma recurrente. El cliente puede cancelar en cualquier momento; la cancelación surte efecto al final del período pagado.
 
 ## 7. Limitación de responsabilidad
 El proveedor no responde por sanciones derivadas de una configuración tributaria, laboral o legal incorrecta hecha por el cliente, ni por decisiones comerciales tomadas con base en los reportes. La responsabilidad total del proveedor se limita al valor pagado por el cliente en los últimos 12 meses, en la medida en que la ley local lo permita.

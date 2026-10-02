@@ -33,7 +33,7 @@ services:
       # Se usa para CORS y para los retornos de pago de Stripe.
       - key: APP_URL
         sync: false
-      # Cobro de suscripciones (opcional; sin estas variables la prueba de 14 días sigue funcionando)
+      # Cobro de suscripciones (opcional; sin estas variables la prueba gratuita sigue funcionando)
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
@@ -42,5 +42,8 @@ services:
         sync: false
       - key: STRIPE_PRICE_ID_PRO
         sync: false
+      # Días de prueba gratuita para cada restaurante nuevo
+      - key: TRIAL_DAYS
+        value: "28"
       - key: ENFORCE_BILLING
         value: "false"

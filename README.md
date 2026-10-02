@@ -25,7 +25,7 @@ Si quieres una URL pública que puedas usar desde cualquier computador o celular
 13. **Contabilidad básica**: cuentas bancarias/caja, categorías de gasto, registro de gastos e ingresos manuales, registro automático del ingreso al cerrar una cuenta, y un resumen tipo estado de resultados (P&L) con saldos por cuenta.
 14. **Nómina y asistencia**: cada empleado marca su entrada/salida desde el menú lateral; el admin define salario (mensual o por hora) y genera períodos de nómina que calculan el pago bruto/neto con deducciones de salud y pensión configurables.
 15. **Domicilios / apps de delivery**: página pública de pedido directo (sin comisión de terceros), webhook por restaurante para recibir pedidos empujados desde apps de domicilios, y un flujo de estados (recibido → preparando → en camino → entregado).
-16. **Suscripción SaaS**: cada restaurante nace con una prueba gratuita de 14 días; se puede cobrar la suscripción mensual con Stripe Checkout y gestionar el método de pago desde el portal de Stripe.
+16. **Suscripción SaaS**: cada restaurante nace con una prueba gratuita de 28 días (configurable con `TRIAL_DAYS`); se puede cobrar la suscripción mensual con Stripe Checkout y gestionar el método de pago desde el portal de Stripe.
 17. **Base de datos lista para producción**: usa SQLite en desarrollo local (cero instalación) y PostgreSQL en producción (ver [Base de datos](#base-de-datos)).
 
 ## Estructura del proyecto
@@ -140,7 +140,7 @@ Si ya facturas por fuera del sistema (por ejemplo con el portal gratuito de la D
 
 ## Suscripción SaaS (cobrar a otros restaurantes)
 
-Cada restaurante que se registra recibe automáticamente 14 días de prueba. Para cobrar la suscripción:
+Cada restaurante que se registra recibe automáticamente 28 días de prueba (cámbialo con la variable `TRIAL_DAYS`). Para cobrar la suscripción:
 
 1. Crea una cuenta en [Stripe](https://stripe.com) y crea dos productos recurrentes (Starter y Pro, o los que definas).
 2. Configura estas variables de entorno en el servidor:

@@ -7,6 +7,7 @@ const { ROLES, ROLE_LABELS, permissionsFor } = require('../permissions');
 const { audit } = require('../services/audit');
 const { ensureZoneTables } = require('../services/tables');
 const { getCountry, LEGAL_VERSION } = require('../compliance');
+const { trialEndDate } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
 
 const router = express.Router();
@@ -74,8 +75,8 @@ router.post('/register-restaurant', ah(async (req, res) => {
       VALUES (?, ?, ?, ?, ?, 'admin', ?)
     `, [userId, restaurantId, adminName, email, passwordHash, now]);
 
-    // Suscripción de prueba de 14 días por defecto (ver server/routes/billing.js)
-    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    // Suscripción de prueba (28 días por defecto, TRIAL_DAYS en services/billing.js)
+    const trialEndsAt = trialEndDate();
     await t.run(`
       INSERT INTO platform_subscriptions (restaurant_id, plan, status, trial_ends_at)
       VALUES (?, 'trial', 'trialing', ?)
