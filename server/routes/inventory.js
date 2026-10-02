@@ -8,6 +8,7 @@ const ah = require('../utils/asyncHandler');
 const router = express.Router();
 router.use(authMiddleware);
 router.use(requireActiveSubscription);
+router.use(requireRole('admin')); // + roles con permiso en el módulo (ver permissions.js)
 
 // Listar inventario del restaurante
 router.get('/', ah(async (req, res) => {

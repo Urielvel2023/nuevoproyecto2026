@@ -8,6 +8,7 @@ const ah = require('../utils/asyncHandler');
 const router = express.Router();
 router.use(authMiddleware);
 router.use(requireActiveSubscription);
+router.use(requireRole('admin')); // + roles con permiso en el módulo (ver permissions.js)
 
 async function getRecipeWithCost(recipeId, restaurantId) {
   const recipe = await db.get('SELECT * FROM recipes WHERE id = ? AND restaurant_id = ?',

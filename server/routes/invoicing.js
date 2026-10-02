@@ -110,9 +110,9 @@ router.post('/orders/:orderId', requireRole('mesero', 'admin'), ah(async (req, r
   const { customer_name, customer_tax_id, customer_email, document_type, manual_cufe } = req.body;
 
   const taxPercentage = restaurant.tax_rate || 0;
-  const subtotal = order.items_total;
-  const tax_amount = subtotal * (taxPercentage / 100);
-  const total = subtotal + tax_amount + (order.delivery_fee || 0);
+  const subtotal = order.net_subtotal;
+  const tax_amount = order.tax_amount;
+  const total = order.total;
 
   // Asignación atómica y portable (SQLite/Postgres) del consecutivo, vía
   // UPDATE ... RETURNING, para no reutilizar/saltar números aunque haya

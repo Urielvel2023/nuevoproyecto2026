@@ -5,6 +5,10 @@ const { v4: uuidv4 } = require('uuid');
 
 async function recordSaleIncome(db, closedOrder) {
   if (!closedOrder || !closedOrder.total) return null;
+  // Ingreso = venta neta (sin impuesto ni propinas: ambos son pasivos, no ingreso)
+  const netSale = closedOrder.net_subtotal != null
+    ? closedOrder.net_subtotal + (closedOrder.delivery_fee || 0)
+    : closedOrder.total;
 
   const defaultAccount = await db.get(
     `SELECT * FROM bank_accounts WHERE restaurant_id = ? AND is_default_sales_account = 1 LIMIT 1`,
@@ -19,7 +23,7 @@ async function recordSaleIncome(db, closedOrder) {
   await db.run(`
     INSERT INTO transactions (id, restaurant_id, bank_account_id, type, description, amount, source, order_id)
     VALUES (?, ?, ?, 'ingreso', ?, ?, 'venta', ?)
-  `, [id, closedOrder.restaurant_id, defaultAccount ? defaultAccount.id : null, description, closedOrder.total, closedOrder.id]);
+  `, [id, closedOrder.restaurant_id, defaultAccount ? defaultAccount.id : null, description, netSale, closedOrder.id]);
 
   return id;
 }

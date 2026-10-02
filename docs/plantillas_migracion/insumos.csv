@@ -1,0 +1,3 @@
+codigo,nombre,categoria,estacion,unidad_base,unidad_compra,factor_compra_a_base,rendimiento_pct,costo_unidad_base,moneda,fecha_costo,proveedor,stock_minimo,punto_reorden,stock_maximo,origen_hoja,origen_celda
+INS-0001,Solomo de cuerito,Carnes,cocina,kg,kg,1,100,,USD,,,,,,PRINCIPALES,
+INS-0002,Pollo entero,Carnes,cocina,kg,kg,1,70,,USD,,,,,,PRINCIPALES,

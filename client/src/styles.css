@@ -120,7 +120,16 @@ button.btn.small { padding: 5px 10px; font-size: 12px; }
 }
 .table-tile.libre { background: #d1fae5; color: #065f46; }
 .table-tile.ocupada { background: #fee2e2; color: #991b1b; }
+.table-tile.por_limpiar { background: #fef3c7; color: #92400e; }
+.table-tile.reservada { background: #dbeafe; color: #1e40af; }
+.table-tile.unida { background: #ede9fe; color: #5b21b6; }
+.table-tile.bloqueada { background: #e5e7eb; color: #6b7280; }
+.table-tile.other { opacity: 0.55; }
 .table-tile:hover { border-color: #1f2430; }
+.table-tile { padding: 12px 8px; }
+.table-name { font-size: 18px; }
+.table-meta { font-size: 11px; font-weight: 400; margin-top: 2px; }
+.table-tile .btn { margin-top: 6px; }
 
 .menu-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
 .menu-picker .item {
@@ -144,3 +153,72 @@ button.btn.small { padding: 5px 10px; font-size: 12px; }
 
 .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .topbar h1 { font-size: 20px; margin: 0; }
+
+.role-chip { display: inline-block; margin: 0 0 10px 8px; font-size: 11px; background: #323a4b; padding: 2px 8px; border-radius: 10px; }
+
+/* Zonas y leyenda de estados */
+.zone-tabs, .category-tabs, .seg, .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.zone-tabs button, .category-tabs button, .seg button, .chips button {
+  padding: 7px 12px; border-radius: 20px; border: 1px solid #d7dae0; background: white; cursor: pointer; font-size: 13px;
+}
+.zone-tabs button.active, .category-tabs button.active, .seg button.active, .chips button.active { background: #1f2430; color: white; border-color: #1f2430; }
+.zone-count { font-size: 11px; opacity: 0.8; margin-left: 4px; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; font-size: 12px; }
+.legend-dot::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: middle; }
+.legend-dot.libre::before { background: #6ee7b7; }
+.legend-dot.ocupada::before { background: #fca5a5; }
+.legend-dot.por_limpiar::before { background: #fcd34d; }
+.legend-dot.reservada::before { background: #93c5fd; }
+.legend-dot.unida::before { background: #c4b5fd; }
+.legend-dot.bloqueada::before { background: #9ca3af; }
+
+/* Ventana del mesero */
+.order-layout { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; align-items: start; }
+.menu-toolbar { margin-bottom: 10px; }
+.menu-picker .item { position: relative; }
+.price-row { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-weight: 600; }
+.quick-add { position: absolute; top: 6px; right: 6px; border: none; background: #2f6feb; color: white; border-radius: 6px; padding: 2px 7px; font-size: 12px; cursor: pointer; }
+.account { position: sticky; top: 12px; }
+.item-notes { font-size: 12px; color: #92400e; margin-top: 2px; }
+.totals { margin-top: 12px; border-top: 1px solid #eee; padding-top: 8px; font-size: 14px; }
+.totals > div { display: flex; justify-content: space-between; padding: 2px 0; }
+.totals .grand { font-weight: 700; font-size: 18px; }
+.totals .discount { color: #b91c1c; }
+.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; }
+.pay-btn { width: 100%; margin-top: 12px; padding: 14px !important; font-size: 16px !important; background: #059669 !important; }
+.pay-btn:disabled, button.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pay-amount { font-size: 18px; margin: 10px 0; }
+.qty-row { display: flex; align-items: center; gap: 14px; }
+.qty-row strong { min-width: 30px; text-align: center; font-size: 18px; }
+.check-line { display: flex; gap: 8px; align-items: center; font-size: 14px; color: #1f2430; margin: 4px 0; }
+.check-line input { width: auto; }
+.mini-tables { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; max-height: 260px; overflow-y: auto; }
+.mini-table { padding: 8px 4px; border-radius: 6px; border: 2px solid transparent; cursor: pointer; font-weight: 600; }
+.mini-table.libre { background: #d1fae5; } .mini-table.ocupada { background: #fee2e2; } .mini-table.reservada { background: #dbeafe; }
+.mini-table.selected { border-color: #1f2430; }
+
+/* Modales */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+.modal { background: white; border-radius: 12px; padding: 18px; width: 420px; max-width: 100%; max-height: 92vh; overflow-y: auto; }
+.modal.wide { width: 640px; }
+.modal-head { display: flex; justify-content: space-between; align-items: center; }
+.modal-head h3 { margin: 0 0 10px; }
+.modal-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+
+.ticket.late { border-left-color: #dc2626; background: #fff7f7; }
+.json-cell { font-family: monospace; font-size: 11px; max-width: 220px; word-break: break-all; color: #374151; }
+
+/* Precuenta: solo visible al imprimir */
+.print-area { display: none; }
+@media print {
+  .sidebar, .no-print, .modal-backdrop { display: none !important; }
+  .main-content { padding: 0; }
+  .print-area { display: block; width: 80mm; font-size: 12px; }
+}
+
+@media (max-width: 900px) {
+  .order-layout, .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .app-shell { flex-direction: column; }
+  .sidebar { width: 100%; }
+  .account { position: static; }
+}

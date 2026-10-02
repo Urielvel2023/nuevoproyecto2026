@@ -2,6 +2,7 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
 const { authMiddleware, requireRole } = require('../auth');
+const { can } = require('../permissions');
 const { requireActiveSubscription } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
 
@@ -49,7 +50,12 @@ router.get('/items', ah(async (req, res) => {
     LEFT JOIN menu_categories mc ON mc.id = mi.category_id
     WHERE mi.restaurant_id = ? ORDER BY mc.sort_order, mi.name
   `, [req.user.restaurant_id]);
-  res.json(await Promise.all(items.map(itemWithCost)));
+  const withCost = await Promise.all(items.map(itemWithCost));
+  // Meseros/caja ven si el plato está costeado y recetado, pero no el costo ni el margen
+  if (!can(req.user.role, 'recetas', 'ver')) {
+    return res.json(withCost.map(({ cost, margin, ...rest }) => ({ ...rest, has_recipe: !!rest.recipe_id })));
+  }
+  res.json(withCost.map(i => ({ ...i, has_recipe: !!i.recipe_id })));
 }));
 
 router.post('/items', requireRole('admin'), ah(async (req, res) => {
@@ -63,7 +69,7 @@ router.post('/items', requireRole('admin'), ah(async (req, res) => {
 
   const item = await db.get('SELECT * FROM menu_items WHERE id = ?', [id]);
   const full = await itemWithCost(item);
-  req.app.get('io').to(req.user.restaurant_id).emit('menu:changed', full);
+  req.app.get('io').to(req.user.restaurant_id).emit('menu:changed', { id: full.id }); // sin costos: los meseros también escuchan
   res.json(full);
 }));
 
@@ -89,7 +95,7 @@ router.put('/items/:id', requireRole('admin'), ah(async (req, res) => {
   const full = await itemWithCost(updated);
   // Este es el evento clave de "sincronización en tiempo real": todos los dispositivos
   // conectados al restaurante (caja, meseros, cocina) reciben el precio/disponibilidad actualizada al instante
-  req.app.get('io').to(req.user.restaurant_id).emit('menu:changed', full);
+  req.app.get('io').to(req.user.restaurant_id).emit('menu:changed', { id: full.id }); // sin costos: los meseros también escuchan
   res.json(full);
 }));
 

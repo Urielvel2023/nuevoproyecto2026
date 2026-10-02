@@ -5,7 +5,7 @@ const fs = require('fs');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
-const { JWT_SECRET } = require('./auth');
+const { JWT_SECRET, moduleGuard } = require('./auth');
 const db = require('./db');
 
 const app = express();
@@ -38,17 +38,19 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {});
 });
 
+// moduleGuard asocia cada router a un módulo de la matriz de accesos
+// (permissions.js), para que cada departamento entre solo a lo suyo.
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/inventory', require('./routes/inventory'));
-app.use('/api/recipes', require('./routes/recipes'));
-app.use('/api/menu', require('./routes/menu'));
-app.use('/api/orders', require('./routes/orders'));
-app.use('/api/reports', require('./routes/reports'));
-app.use('/api/invoicing', require('./routes/invoicing'));
-app.use('/api/accounting', require('./routes/accounting'));
-app.use('/api/payroll', require('./routes/payroll'));
-app.use('/api/delivery', require('./routes/delivery'));
-app.use('/api/billing', require('./routes/billing'));
+app.use('/api/inventory', moduleGuard('inventario'), require('./routes/inventory'));
+app.use('/api/recipes', moduleGuard('recetas'), require('./routes/recipes'));
+app.use('/api/menu', moduleGuard('menu'), require('./routes/menu'));
+app.use('/api/orders', moduleGuard('pedidos'), require('./routes/orders'));
+app.use('/api/reports', moduleGuard('reportes'), require('./routes/reports'));
+app.use('/api/invoicing', moduleGuard('facturacion'), require('./routes/invoicing'));
+app.use('/api/accounting', moduleGuard('contabilidad'), require('./routes/accounting'));
+app.use('/api/payroll', moduleGuard('nomina'), require('./routes/payroll'));
+app.use('/api/delivery', moduleGuard('delivery'), require('./routes/delivery'));
+app.use('/api/billing', moduleGuard('suscripcion'), require('./routes/billing'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, db: db.kind }));
 

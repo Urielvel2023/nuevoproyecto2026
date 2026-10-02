@@ -1,9 +1,15 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import ClockWidget from './components/ClockWidget';
+import { SCREENS } from './routesConfig';
+
+const ROLE_LABELS = {
+  admin: 'Administrador', gerencia: 'Gerencia', contaduria: 'Contaduría', rrhh: 'Talento Humano',
+  cocina: 'Cocina', bar: 'Bar', mesero: 'Salón / Mesero', caja: 'Caja', almacen: 'Almacén', auditoria: 'Auditoría'
+};
 
 export default function Layout() {
-  const { user, logout } = useAuth();
+  const { user, logout, can } = useAuth();
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -15,31 +21,12 @@ export default function Layout() {
     <div className="app-shell">
       <div className="sidebar">
         <h2>🍽️ {user?.name}</h2>
+        <div className="role-chip">{ROLE_LABELS[user?.role] || user?.role}</div>
         <ClockWidget />
         <nav>
-          {user?.role === 'admin' && (
-            <>
-              <NavLink to="/admin/inventario">📦 Almacén</NavLink>
-              <NavLink to="/admin/recetas">📋 Recetas / Costeo</NavLink>
-              <NavLink to="/admin/menu">🍔 Menú</NavLink>
-              <NavLink to="/admin/reportes">📊 Reportes</NavLink>
-              <NavLink to="/admin/facturacion">🧾 Facturación</NavLink>
-              <NavLink to="/admin/contabilidad">💰 Contabilidad</NavLink>
-              <NavLink to="/admin/personal">👥 Personal</NavLink>
-              <NavLink to="/admin/nomina">🧑‍💼 Nómina</NavLink>
-              <NavLink to="/admin/suscripcion">💳 Suscripción</NavLink>
-              <NavLink to="/mesero/mesas">🍽️ Mesas</NavLink>
-              <NavLink to="/domicilios">🛵 Domicilios</NavLink>
-              <NavLink to="/cocina">👨‍🍳 Cocina</NavLink>
-            </>
-          )}
-          {user?.role === 'mesero' && (
-            <>
-              <NavLink to="/mesero/mesas">🍽️ Mesas</NavLink>
-              <NavLink to="/domicilios">🛵 Domicilios</NavLink>
-            </>
-          )}
-          {user?.role === 'cocina' && <NavLink to="/cocina">👨‍🍳 Comanda</NavLink>}
+          {SCREENS.filter(s => !s.module || can(s.module, s.action || 'ver')).map(s => (
+            <NavLink key={s.path} to={s.path}>{s.label}</NavLink>
+          ))}
           <button onClick={handleLogout}>🚪 Cerrar sesión</button>
         </nav>
       </div>

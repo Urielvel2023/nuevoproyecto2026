@@ -1,0 +1,3 @@
+codigo_receta,linea,codigo_insumo,codigo_subreceta,cantidad,unidad,merma_pct,origen_celda
+REC-0002,1,INS-XXXX,,0.22,kg,0,
+REC-0002,2,,REC-0001,1,porcion,0,

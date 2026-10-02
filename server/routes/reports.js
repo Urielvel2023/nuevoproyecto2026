@@ -28,7 +28,7 @@ router.get('/summary', ah(async (req, res) => {
       COUNT(DISTINCT o.id) as orders_count,
       COALESCE(SUM(oi.price_snapshot * oi.quantity), 0) as total_sales
     FROM orders o
-    JOIN order_items oi ON oi.order_id = o.id
+    JOIN order_items oi ON oi.order_id = o.id AND oi.status = 'activo'
     WHERE o.restaurant_id = ? AND o.status = 'cerrada'
       AND substr(o.closed_at, 1, 10) BETWEEN ? AND ?
   `, [req.user.restaurant_id, from, to]);
@@ -45,7 +45,7 @@ router.get('/by-waiter', ah(async (req, res) => {
            COUNT(DISTINCT o.id) as orders_count,
            COALESCE(SUM(oi.price_snapshot * oi.quantity), 0) as total_sales
     FROM orders o
-    JOIN order_items oi ON oi.order_id = o.id
+    JOIN order_items oi ON oi.order_id = o.id AND oi.status = 'activo'
     JOIN users u ON u.id = o.waiter_id
     WHERE o.restaurant_id = ? AND o.status = 'cerrada'
       AND substr(o.closed_at, 1, 10) BETWEEN ? AND ?
@@ -65,7 +65,7 @@ router.get('/by-item', ah(async (req, res) => {
            SUM(oi.quantity) as units_sold,
            SUM(oi.price_snapshot * oi.quantity) as total_sales
     FROM orders o
-    JOIN order_items oi ON oi.order_id = o.id
+    JOIN order_items oi ON oi.order_id = o.id AND oi.status = 'activo'
     LEFT JOIN menu_items mi ON mi.id = oi.menu_item_id
     LEFT JOIN menu_categories mc ON mc.id = mi.category_id
     WHERE o.restaurant_id = ? AND o.status = 'cerrada'
@@ -84,7 +84,7 @@ router.get('/by-category', ah(async (req, res) => {
            SUM(oi.quantity) as units_sold,
            SUM(oi.price_snapshot * oi.quantity) as total_sales
     FROM orders o
-    JOIN order_items oi ON oi.order_id = o.id
+    JOIN order_items oi ON oi.order_id = o.id AND oi.status = 'activo'
     LEFT JOIN menu_items mi ON mi.id = oi.menu_item_id
     LEFT JOIN menu_categories mc ON mc.id = mi.category_id
     WHERE o.restaurant_id = ? AND o.status = 'cerrada'
@@ -102,7 +102,7 @@ router.get('/by-day', ah(async (req, res) => {
     SELECT substr(o.closed_at, 1, 10) as day,
            SUM(oi.price_snapshot * oi.quantity) as total_sales
     FROM orders o
-    JOIN order_items oi ON oi.order_id = o.id
+    JOIN order_items oi ON oi.order_id = o.id AND oi.status = 'activo'
     WHERE o.restaurant_id = ? AND o.status = 'cerrada'
       AND substr(o.closed_at, 1, 10) BETWEEN ? AND ?
     GROUP BY day

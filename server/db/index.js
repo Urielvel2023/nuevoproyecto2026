@@ -6,6 +6,8 @@
 const path = require('path');
 const fs = require('fs');
 
+const { runSqliteMigrations, runPgMigrations } = require('./migrations');
+
 const usePostgres = !!process.env.DATABASE_URL;
 
 function toPgSql(sql) {
@@ -29,7 +31,7 @@ if (usePostgres) {
   });
 
   const schema = fs.readFileSync(path.join(__dirname, 'schema.pg.sql'), 'utf8');
-  const ready = pool.query(schema).then(() => {});
+  const ready = pool.query(schema).then(() => runPgMigrations(pool));
 
   impl = {
     kind: 'postgres',
@@ -84,10 +86,11 @@ if (usePostgres) {
 
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   sqlite.exec(schema);
+  const ready = runSqliteMigrations(sqlite);
 
   impl = {
     kind: 'sqlite',
-    ready: Promise.resolve(),
+    ready,
     nowIso,
     async get(sql, params = []) {
       return sqlite.prepare(sql).get(...params);

@@ -10,6 +10,9 @@ const COUNTRIES = [
   { code: 'AR', name: 'Argentina', currency: 'ARS', symbol: '$', tax: 'IVA', rate: 21 },
   { code: 'CL', name: 'Chile', currency: 'CLP', symbol: '$', tax: 'IVA', rate: 19 },
   { code: 'EC', name: 'Ecuador', currency: 'USD', symbol: '$', tax: 'IVA', rate: 15 },
+  { code: 'VE', name: 'Venezuela', currency: 'VES', symbol: 'Bs.', tax: 'IVA', rate: 16 },
+  { code: 'PA', name: 'Panamá', currency: 'USD', symbol: '$', tax: 'ITBMS', rate: 7 },
+  { code: 'DO', name: 'República Dominicana', currency: 'DOP', symbol: 'RD$', tax: 'ITBIS', rate: 18 },
   { code: 'UY', name: 'Uruguay', currency: 'UYU', symbol: '$', tax: 'IVA', rate: 22 },
   { code: 'BR', name: 'Brasil', currency: 'BRL', symbol: 'R$', tax: 'ICMS', rate: 17 },
   { code: 'OTHER', name: 'Otro país', currency: 'USD', symbol: '$', tax: 'IVA', rate: 0 },
@@ -24,7 +27,7 @@ export default function Login() {
 
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [regForm, setRegForm] = useState({
-    restaurantName: '', country: 'CO', adminName: '', email: '', password: ''
+    restaurantName: '', country: 'CO', adminName: '', email: '', password: '', terraceTables: 10
   });
 
   async function handleLogin(e) {
@@ -32,8 +35,8 @@ export default function Login() {
     setError(''); setLoading(true);
     try {
       const { data } = await axios.post('/api/auth/login', loginForm);
-      login(data.token, data.user);
-      navigate('/');
+      login(data.token, data.user, data.permissions);
+      navigate(data.password_expired ? '/mi-cuenta?expirada=1' : '/');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al iniciar sesión');
     } finally {
@@ -53,7 +56,7 @@ export default function Login() {
         taxName: c.tax,
         taxRate: c.rate
       });
-      login(data.token, data.user);
+      login(data.token, data.user, data.permissions);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al registrar');
@@ -103,6 +106,11 @@ export default function Login() {
               </select>
             </div>
             <div className="field">
+              <label>Mesas de terraza (el salón principal se crea con 30 mesas)</label>
+              <input type="number" min="0" max="200" value={regForm.terraceTables}
+                onChange={e => setRegForm({ ...regForm, terraceTables: e.target.value })} />
+            </div>
+            <div className="field">
               <label>Tu nombre (administrador)</label>
               <input required value={regForm.adminName}
                 onChange={e => setRegForm({ ...regForm, adminName: e.target.value })} />
@@ -113,8 +121,8 @@ export default function Login() {
                 onChange={e => setRegForm({ ...regForm, email: e.target.value })} />
             </div>
             <div className="field">
-              <label>Contraseña</label>
-              <input type="password" required value={regForm.password}
+              <label>Contraseña (mínimo 8 caracteres)</label>
+              <input type="password" required minLength={8} value={regForm.password}
                 onChange={e => setRegForm({ ...regForm, password: e.target.value })} />
             </div>
             <button className="btn" style={{ width: '100%' }} disabled={loading}>
