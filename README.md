@@ -170,6 +170,25 @@ Sin estas variables, el sistema funciona exactamente igual (la pestaña Suscripc
 
 ## Desplegar en Render
 
+### Opción rápida (recomendada): Blueprint en un clic
+
+El repositorio trae `render.yaml`, que crea la base de datos PostgreSQL y el servicio web con todo configurado (incluida una `JWT_SECRET` aleatoria).
+
+1. Entra a [render.com](https://render.com) con tu cuenta (puedes usar "Sign up with GitHub").
+2. Clic en **New + → Blueprint**.
+3. Conecta el repositorio `nuevoproyecto2026` y elige la rama que quieres publicar (por ejemplo `main`, después de fusionar los cambios).
+4. Render muestra la base `living-pos-db` y el servicio `living-pos`. Completa la variable `APP_URL` con la URL pública (puedes dejarla vacía en el primer despliegue y ponerla después, por ejemplo `https://living-pos.onrender.com`). Las variables de Stripe son opcionales.
+5. Clic en **Apply**. En unos 5 minutos el sistema queda en línea y crea las tablas solo.
+6. Abre la URL, pestaña **Registrar restaurante**: cada cliente se registra, elige su país y acepta los términos.
+
+Planes que usa el Blueprint: servicio web **starter** (no se duerme) y Postgres **basic-256mb** (el plan gratuito de Postgres expira y no sirve para clientes reales). Ambos tienen costo mensual en Render; revisa los precios vigentes antes de aplicar. Para una prueba sin costo puedes cambiar ambos a `free` en `render.yaml`.
+
+Seguridad en producción: el servidor no arranca sin una `JWT_SECRET` de al menos 32 caracteres, envía cabeceras de seguridad (HSTS, anti-iframe) y limita los intentos de inicio de sesión por IP, además del bloqueo por usuario.
+
+Dominio propio: en el servicio → **Settings → Custom Domains**, agrega tu dominio, crea el registro DNS que indique Render y actualiza `APP_URL`.
+
+### Opción manual
+
 Esto publica tu sistema en una URL pública como `https://tu-restaurante.onrender.com`, accesible desde cualquier navegador, sin que nadie tenga que instalar nada. El backend ya está preparado para servir el frontend compilado como un solo sitio web.
 
 ### Paso 1 — Sube el código a GitHub

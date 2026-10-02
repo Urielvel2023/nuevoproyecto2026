@@ -7,16 +7,22 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET, moduleGuard } = require('./auth');
 const db = require('./db');
+const { securityHeaders, rateLimit } = require('./security');
 
 const app = express();
-app.use(cors());
+// Render (y la mayoría de hostings) ponen un proxy delante: así req.ip es la IP real del cliente
+app.set('trust proxy', 1);
+app.use(securityHeaders);
+// El frontend se sirve desde el mismo dominio; si APP_URL está definida, solo ese origen puede llamar a la API
+const allowedOrigin = process.env.APP_URL || '*';
+app.use(cors({ origin: allowedOrigin }));
 // El webhook de Stripe necesita el body crudo (raw) para verificar la firma,
 // así que se monta antes que express.json() (ver routes/billing.js).
 app.use('/api/billing/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, { cors: { origin: allowedOrigin } });
 app.set('io', io);
 
 // Autenticación de sockets: cada cliente se une a la "sala" de su restaurante (tenant)
@@ -40,6 +46,9 @@ io.on('connection', (socket) => {
 
 // moduleGuard asocia cada router a un módulo de la matriz de accesos
 // (permissions.js), para que cada departamento entre solo a lo suyo.
+// Límite de intentos contra fuerza bruta en login y registro (además del bloqueo por usuario)
+app.use(['/api/auth/login', '/api/auth/register-restaurant'],
+  rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: 'Demasiados intentos desde esta conexión. Espera 15 minutos.' }));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/compliance', require('./routes/compliance'));
 app.use('/api/inventory', moduleGuard('inventario'), require('./routes/inventory'));

@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken');
 const { can } = require('./permissions');
 
+if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
+  // Con una clave por defecto cualquiera podría falsificar sesiones de otros restaurantes
+  throw new Error('JWT_SECRET es obligatorio en producción (mínimo 32 caracteres)');
+}
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
 function signToken(user) {

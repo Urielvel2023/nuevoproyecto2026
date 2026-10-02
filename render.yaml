@@ -1,0 +1,46 @@
+# Blueprint de Render: crea la base de datos PostgreSQL y el servicio web
+# (backend + frontend compilado) en un solo paso.
+# En Render: New + → Blueprint → elige este repositorio y la rama a desplegar.
+databases:
+  - name: living-pos-db
+    databaseName: living_pos
+    user: living_pos
+    # Plan pagado: el plan gratuito de Postgres expira y no sirve para clientes reales.
+    plan: basic-256mb
+
+services:
+  - type: web
+    name: living-pos
+    runtime: node
+    # "starter" no se duerme por inactividad (el plan free sí, y tarda ~1 min en despertar).
+    plan: starter
+    buildCommand: npm install --prefix client --include=dev && npm run build --prefix client && npm install --prefix server --omit=dev
+    startCommand: npm start --prefix server
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: living-pos-db
+          property: connectionString
+      # URL pública del servicio (ej. https://living-pos.onrender.com o tu dominio).
+      # Se usa para CORS y para los retornos de pago de Stripe.
+      - key: APP_URL
+        sync: false
+      # Cobro de suscripciones (opcional; sin estas variables la prueba de 14 días sigue funcionando)
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_ID_STARTER
+        sync: false
+      - key: STRIPE_PRICE_ID_PRO
+        sync: false
+      - key: ENFORCE_BILLING
+        value: "false"
