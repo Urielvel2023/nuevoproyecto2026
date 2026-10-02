@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+</head>
+<body style="margin:0">
+<title>Living POS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Concepto: el plano del salón y el papel térmico de la comanda. Los colores de
+   estado de mesa (libre, ocupada, por limpiar, reservada, unida) son la identidad. */
+:root {
+  --bg: #f3f5f2;
+  --surface: #ffffff;
+  --ink: #18221e;
+  --muted: #5d6b65;
+  --line: #d9dfdb;
+  --accent: #0f6b4c;
+  --accent-ink: #ffffff;
+  --paper: #fbfbf7;
+  --paper-ink: #22201c;
+  --libre: #2f9e6e;      --libre-bg: #dcf1e6;
+  --ocupada: #c8432f;    --ocupada-bg: #f8e0db;
+  --limpiar: #b9821a;    --limpiar-bg: #f6ebd2;
+  --reservada: #2f63b8;  --reservada-bg: #dfe8f7;
+  --unida: #7a4fc0;      --unida-bg: #ebe2f8;
+  --bloq: #7d8783;       --bloq-bg: #e6e9e7;
+  --shadow: 0 1px 2px rgba(20,30,25,.06), 0 8px 24px rgba(20,30,25,.07);
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111815; --surface: #19221e; --ink: #e7eeea; --muted: #9db0a7; --line: #2c3833;
+    --accent: #4cc497; --accent-ink: #0b1a14; --paper: #f1f0e8; --paper-ink: #22201c;
+    --libre: #5fd09c; --libre-bg: #173328; --ocupada: #f08a77; --ocupada-bg: #3a1f1a;
+    --limpiar: #e7b552; --limpiar-bg: #382c14; --reservada: #7fa8f0; --reservada-bg: #1b2840;
+    --unida: #b796ef; --unida-bg: #2b2140; --bloq: #8d9893; --bloq-bg: #252d29;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111815; --surface: #19221e; --ink: #e7eeea; --muted: #9db0a7; --line: #2c3833;
+  --accent: #4cc497; --accent-ink: #0b1a14; --paper: #f1f0e8; --paper-ink: #22201c;
+  --libre: #5fd09c; --libre-bg: #173328; --ocupada: #f08a77; --ocupada-bg: #3a1f1a;
+  --limpiar: #e7b552; --limpiar-bg: #382c14; --reservada: #7fa8f0; --reservada-bg: #1b2840;
+  --unida: #b796ef; --unida-bg: #2b2140; --bloq: #8d9893; --bloq-bg: #252d29;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 1160px; margin: 0 auto; padding-inline: 20px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.05; text-wrap: balance; margin: 0; }
+h2 { font-size: clamp(28px, 4vw, 42px); font-weight: 800; font-stretch: 85%; letter-spacing: -.01em; }
+h3 { font-size: 19px; font-weight: 700; }
+p { margin: 0; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.lede { color: var(--muted); max-width: 62ch; }
+section { padding-block: 72px; }
+section + section { border-top: 1px solid var(--line); }
+.sec-head { display: grid; gap: 12px; margin-bottom: 32px; }
+a { color: var(--accent); }
+button { font: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Barra superior */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; gap: 20px; padding-block: 12px; }
+.brand { font-family: var(--display); font-weight: 900; font-stretch: 110%; font-size: 20px; display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; }
+.brand-mark { display: grid; grid-template-columns: repeat(2, 8px); gap: 3px; }
+.brand-mark i { width: 8px; height: 8px; border-radius: 2px; display: block; }
+.top nav { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap; }
+.top nav a { color: var(--muted); text-decoration: none; font-size: 14px; }
+.top nav a:hover { color: var(--ink); }
+
+/* Botones */
+.btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; padding: 12px 18px; font-weight: 600; border: 1px solid transparent; cursor: pointer; text-decoration: none; font-size: 15px; }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn-sm { padding: 7px 11px; font-size: 13px; border-radius: 6px; }
+
+/* Hero */
+.hero { padding-block: 56px 64px; }
+.hero .wrap { display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; }
+.hero h1 { font-size: clamp(40px, 6.4vw, 78px); font-weight: 900; font-stretch: 75%; letter-spacing: -.02em; line-height: .95; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero .lede { margin-top: 20px; font-size: 18px; }
+.hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+.hero-facts { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 36px; font-family: var(--mono); font-size: 13px; color: var(--muted); }
+.hero-facts b { display: block; font-family: var(--display); font-size: 30px; font-weight: 800; color: var(--ink); font-stretch: 80%; }
+
+/* Ticket térmico */
+.ticket { background: var(--paper); color: var(--paper-ink); font-family: var(--mono); font-size: 13px; padding: 22px 22px 30px; box-shadow: var(--shadow); position: relative; max-width: 360px; margin-inline: auto; width: 100%;
+  -webkit-mask: radial-gradient(circle 6px at 50% 100%, transparent 98%, #000) 0 0/16px 100% repeat-x;
+          mask: radial-gradient(circle 6px at 50% 100%, transparent 98%, #000) 0 0/16px 100% repeat-x; }
+.ticket h4 { margin: 0; text-align: center; font-size: 15px; letter-spacing: .14em; }
+.ticket .t-sub { text-align: center; font-size: 11px; opacity: .7; margin-top: 4px; }
+.ticket hr { border: 0; border-top: 1px dashed #8a877d; margin: 12px 0; }
+.t-row { display: flex; justify-content: space-between; gap: 10px; font-variant-numeric: tabular-nums; }
+.t-row.note { font-size: 11px; opacity: .75; padding-left: 22px; }
+.t-row.void { text-decoration: line-through; opacity: .5; }
+.t-row.big { font-weight: 600; font-size: 16px; margin-top: 4px; }
+.t-foot { text-align: center; font-size: 10px; opacity: .65; margin-top: 12px; }
+
+/* Demo */
+.demo { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tab { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+.tab[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tab small { font-family: var(--mono); opacity: .75; margin-left: 4px; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; background: var(--c); }
+.plan { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+.mesa { border: 2px solid transparent; border-radius: 10px; padding: 8px 4px; text-align: center; cursor: pointer; font-family: var(--display); font-weight: 800; font-stretch: 90%; font-size: 17px; line-height: 1.1; }
+.mesa small { display: block; font-family: var(--body); font-weight: 500; font-size: 10px; margin-top: 2px; }
+.mesa.libre { background: var(--libre-bg); color: var(--libre); }
+.mesa.ocupada { background: var(--ocupada-bg); color: var(--ocupada); }
+.mesa.por_limpiar { background: var(--limpiar-bg); color: var(--limpiar); }
+.mesa.reservada { background: var(--reservada-bg); color: var(--reservada); }
+.mesa.unida { background: var(--unida-bg); color: var(--unida); }
+.mesa.bloqueada { background: var(--bloq-bg); color: var(--bloq); cursor: not-allowed; }
+.mesa.sel { border-color: var(--ink); }
+.menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 14px; }
+.dish { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--bg); text-align: left; cursor: pointer; color: var(--ink); display: grid; gap: 4px; }
+.dish:hover { border-color: var(--accent); }
+.dish b { font-size: 14px; }
+.dish .meta { display: flex; justify-content: space-between; align-items: center; font-family: var(--mono); font-size: 12px; }
+.chip { display: inline-block; font-family: var(--mono); font-size: 10.5px; padding: 2px 7px; border-radius: 999px; background: var(--libre-bg); color: var(--libre); }
+.chip.warn { background: var(--limpiar-bg); color: var(--limpiar); }
+.chip.red { background: var(--ocupada-bg); color: var(--ocupada); }
+.chip.blue { background: var(--reservada-bg); color: var(--reservada); }
+.lines { display: grid; gap: 2px; margin-top: 6px; }
+.line { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.line .qty { font-family: var(--mono); font-weight: 600; }
+.line .acts { display: flex; gap: 4px; }
+.line .sub { font-size: 12px; color: var(--muted); }
+.line .amt { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.totals { margin-top: 12px; display: grid; gap: 3px; font-family: var(--mono); font-size: 13px; }
+.totals div { display: flex; justify-content: space-between; }
+.totals .grand { font-size: 18px; font-weight: 600; font-family: var(--display); font-stretch: 85%; }
+.acts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; }
+.pay { width: 100%; justify-content: center; margin-top: 10px; padding: 14px; font-size: 16px; }
+.empty { color: var(--muted); font-size: 14px; padding: 18px 0; }
+.kds { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-top: 16px; }
+.kds-t { flex: 0 0 150px; background: var(--paper); color: var(--paper-ink); font-family: var(--mono); font-size: 12px; padding: 10px; border-top: 4px solid var(--limpiar); border-radius: 4px; }
+.kds-t.listo { border-top-color: var(--libre); }
+.kds-label { font-family: var(--mono); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-top: 18px; }
+.toast { margin-top: 10px; font-size: 13px; padding: 8px 10px; border-radius: 8px; background: var(--reservada-bg); color: var(--reservada); }
+.toast.err { background: var(--ocupada-bg); color: var(--ocupada); }
+
+/* Hoja (modal) */
+.sheet-back { position: fixed; inset: 0; background: rgba(10,15,12,.5); display: grid; place-items: center; z-index: 50; padding: 16px; }
+.sheet { background: var(--surface); color: var(--ink); border-radius: 14px; padding: 20px; width: min(460px, 100%); max-height: 90vh; overflow-y: auto; display: grid; gap: 14px; }
+.sheet h3 { display: flex; justify-content: space-between; gap: 10px; }
+.field { display: grid; gap: 6px; }
+.field > span { font-size: 12px; color: var(--muted); }
+.stepper { display: flex; align-items: center; gap: 14px; font-family: var(--mono); font-size: 18px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 999px; padding: 5px 10px; font-size: 12.5px; cursor: pointer; }
+.chips button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+input[type="text"], input[type="password"], input[type="number"], select { font: inherit; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); width: 100%; }
+
+/* Funciones */
+.features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.feat { background: var(--surface); padding: 22px; display: grid; gap: 8px; align-content: start; }
+.feat ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: grid; gap: 3px; }
+.status { justify-self: start; }
+
+/* Matriz */
+.scroll-x { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 500; }
+td.perm { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td.none { color: var(--line); }
+
+/* Países */
+.law { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 20px; }
+.country-list { display: grid; gap: 4px; align-content: start; }
+.country-list button { text-align: left; background: transparent; border: 1px solid transparent; color: var(--ink); padding: 9px 12px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+.country-list button small { font-family: var(--mono); color: var(--muted); }
+.country-list button[aria-pressed="true"] { background: var(--surface); border-color: var(--line); font-weight: 600; }
+.law-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 24px; display: grid; gap: 16px; min-width: 0; }
+.law-card dl { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 10px 18px; margin: 0; font-size: 14.5px; }
+.law-card dt { color: var(--muted); font-size: 13px; }
+.law-card dd { margin: 0; }
+.disclaimer { font-size: 12.5px; color: var(--muted); border-left: 3px solid var(--limpiar); padding-left: 12px; }
+
+/* Caso real */
+.case { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.case-item { border-top: 3px solid var(--ocupada); padding-top: 14px; display: grid; gap: 6px; }
+.case-item .num { font-family: var(--display); font-weight: 800; font-stretch: 80%; font-size: 32px; }
+
+/* Planes */
+.plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.plan-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 24px; display: grid; gap: 12px; align-content: start; }
+.plan-card.featured { border: 2px solid var(--accent); }
+.plan-card .price { font-family: var(--display); font-weight: 800; font-size: 26px; font-stretch: 85%; }
+.plan-card ul { margin: 0; padding-left: 18px; font-size: 14px; color: var(--muted); display: grid; gap: 4px; }
+
+/* FAQ */
+.faq { display: grid; gap: 8px; max-width: 820px; }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; }
+summary { cursor: pointer; font-weight: 600; }
+details p { margin-top: 10px; color: var(--muted); font-size: 15px; }
+
+footer { padding-block: 36px 48px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+footer .wrap { display: grid; gap: 10px; }
+
+@media (max-width: 900px) {
+  .hero .wrap, .demo, .law { grid-template-columns: 1fr; }
+  .features, .plans, .case { grid-template-columns: 1fr; }
+  .top nav { display: none; }
+  .law-card dl { grid-template-columns: 1fr; gap: 2px 0; }
+  .law-card dd { margin-bottom: 10px; }
+  .country-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mesa, .dish, .btn { transition: transform .12s ease, border-color .12s ease; }
+  .mesa:active, .dish:active, .btn:active { transform: scale(.97); }
+}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#inicio" aria-label="Living POS, inicio">
+      <span class="brand-mark" aria-hidden="true"><i style="background:var(--libre)"></i><i style="background:var(--ocupada)"></i><i style="background:var(--limpiar)"></i><i style="background:var(--reservada)"></i></span>
+      Living POS
+    </a>
+    <nav aria-label="Secciones">
+      <a href="#demo">Demo</a>
+      <a href="#funciones">Funciones</a>
+      <a href="#accesos">Accesos</a>
+      <a href="#paises">Países y ley</a>
+      <a href="#planes">Planes</a>
+      <a href="#preguntas">Preguntas</a>
+    </nav>
+  </div>
+</header>
+
+<main id="inicio">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">Software para restaurantes, bares y cocinas · Latinoamérica</p>
+        <h1 style="margin-top:14px">Cada mesa facturada. <em>Cada plato costeado.</em></h1>
+        <p class="lede">El mesero abre la mesa, incluye platos y bebidas que ya tienen receta y costo, y cobra como pida el cliente. Cocina y bar reciben la comanda al instante, el inventario se descuenta solo y gerencia ve cuánto deja cada plato.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary" href="#demo">Probar la ventana del mesero</a>
+          <a class="btn btn-ghost" href="#paises">Ver cumplimiento por país</a>
+        </div>
+        <div class="hero-facts">
+          <div><b>30+</b>mesas de salón, más terraza, barra y VIP</div>
+          <div><b>10</b>departamentos con clave propia</div>
+          <div><b>12</b>países con perfil legal</div>
+        </div>
+      </div>
+      <div class="ticket" aria-label="Precuenta de ejemplo">
+        <h4>PRECUENTA</h4>
+        <p class="t-sub">Mesa S05 · 2 pax · Carlos · 20:14</p>
+        <hr>
+        <div class="t-row"><span>2 Solomo a la plancha</span><span>32,00</span></div>
+        <div class="t-row note"><span>C1 · término medio</span><span></span></div>
+        <div class="t-row"><span>1 Jugo de patilla</span><span>3,00</span></div>
+        <div class="t-row"><span>1 Torta de zanahoria</span><span>6,50</span></div>
+        <div class="t-row void"><span>1 Café negro grande</span><span>2,50</span></div>
+        <hr>
+        <div class="t-row"><span>Consumo</span><span>41,50</span></div>
+        <div class="t-row"><span>Desc. 10 % (autorizado)</span><span>-4,15</span></div>
+        <div class="t-row"><span>IVA 16 %</span><span>5,98</span></div>
+        <div class="t-row big"><span>TOTAL</span><span>43,33</span></div>
+        <hr>
+        <div class="t-row"><span>Propina sugerida 10 %</span><span>4,33</span></div>
+        <p class="t-foot">Ejemplo ilustrativo · Documento no válido como factura</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="demo">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Demo interactiva</p>
+        <h2>La ventana del mesero</h2>
+        <p class="lede">Toca una mesa libre, incluye platos y cobra. Para anular algo ya preparado o aplicar un descuento, el sistema pide el PIN del supervisor (en esta demo es <b style="font-family:var(--mono)">1234</b>). Los precios son de ejemplo y el impuesto sigue al país elegido en «Países y ley».</p>
+      </div>
+      <div class="demo">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="tabs" id="zoneTabs" role="group" aria-label="Zonas"></div>
+            <span class="chip blue" id="occupancy"></span>
+          </div>
+          <div class="legend">
+            <span style="--c:var(--libre)">Libre</span>
+            <span style="--c:var(--ocupada)">Ocupada</span>
+            <span style="--c:var(--limpiar)">Por limpiar</span>
+            <span style="--c:var(--reservada)">Reservada</span>
+            <span style="--c:var(--unida)">Unida</span>
+            <span style="--c:var(--bloq)">Bloqueada</span>
+          </div>
+          <div class="plan" id="plan"></div>
+          <div id="menuWrap" hidden>
+            <div class="panel-head" style="margin:18px 0 0">
+              <div class="tabs" id="catTabs" role="group" aria-label="Categorías"></div>
+            </div>
+            <div class="menu-grid" id="menu"></div>
+          </div>
+          <p class="kds-label">Comandas en cocina y bar (en vivo)</p>
+          <div class="kds" id="kds"><p class="empty">Sin comandas pendientes.</p></div>
+        </div>
+
+        <div class="panel" id="account">
+          <div class="panel-head">
+            <h3 id="accTitle">Cuenta</h3>
+            <span class="chip" id="accChip">Elige una mesa</span>
+          </div>
+          <div id="accBody"><p class="empty">Toca una mesa libre (verde) para abrirla.</p></div>
+          <div id="toast" class="toast" hidden></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="funciones">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Un solo sistema, una sola base de datos</p>
+        <h2>Todo el restaurante en un lugar</h2>
+        <p class="lede">Cada módulo indica si ya está disponible o en qué fase entra. Preferimos decirlo claro a prometer de más.</p>
+      </div>
+      <div class="features" id="features"></div>
+    </div>
+  </section>
+
+  <section id="caso">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Caso real · del Excel al sistema</p>
+        <h2>Lo que esconde un recetario en Excel</h2>
+        <p class="lede">Auditamos el recetario de un restaurante con 17 páginas de recetas, subrecetas y precios. Encontramos 34 errores que afectaban directamente el precio de venta.</p>
+      </div>
+      <div class="case">
+        <div class="case-item"><span class="num">20,8×</span><h3>El mismo insumo, dos precios</h3><p class="lede">El solomo figuraba a 250.000 por kg en un plato y a 12.000 en otro. El plato con el precio bajo quedaba subvalorado frente al resto de la carta.</p></div>
+        <div class="case-item"><span class="num">0 %</span><h3>Contornos vendidos al costo</h3><p class="lede">El arroz y el puré adicionales tenían como precio de venta su propio costo por ración. Cada contorno vendido no dejaba margen.</p></div>
+        <div class="case-item"><span class="num">×1,56</span><h3>Misceláneos cobrados dos veces</h3><p class="lede">Las salsas ya llevaban un 25 % de misceláneos y el plato volvía a sumarlo. En el sistema, cada insumo tiene un solo costo y los recargos se aplican una vez.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="accesos">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Seguridad por departamento</p>
+        <h2>Cada quien con su clave. Todos con el mismo fin.</h2>
+        <p class="lede">Cocina no ve la nómina, RRHH no modifica recetas, contaduría no altera inventarios y el mesero solo trabaja sus mesas. Las anulaciones, descuentos y cortesías piden PIN de supervisor y quedan en la bitácora con fecha, IP, antes y después.</p>
+      </div>
+      <div class="scroll-x"><table id="matrix"></table></div>
+      <p class="lede" style="margin-top:12px;font-size:13px">V ver · C crear · E editar · D eliminar · A aprobar · N anular · X exportar. El administrador tiene acceso total.</p>
+    </div>
+  </section>
+
+  <section id="paises">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Países y ley</p>
+        <h2>Se adapta a la ley del país donde operas</h2>
+        <p class="lede">Al registrarse, cada negocio elige su país. El sistema configura moneda e impuesto, muestra qué autoridad fiscal, ley de datos personales y régimen laboral le aplican, y lista lo que falta para operar legalmente. El negocio acepta los términos y la responsabilidad de cumplir su ley local, y esa aceptación queda registrada.</p>
+      </div>
+      <div class="law">
+        <div class="country-list" id="countryList" role="group" aria-label="Países"></div>
+        <div class="law-card" id="lawCard"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="planes">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Planes</p>
+        <h2>Empieza con 14 días de prueba</h2>
+        <p class="lede">El precio se publica en la moneda de cada país e incluye los impuestos que correspondan a la suscripción.</p>
+      </div>
+      <div class="plans">
+        <div class="plan-card">
+          <h3>Prueba</h3>
+          <p class="price">14 días gratis</p>
+          <ul><li>Todas las funciones disponibles</li><li>Sin tarjeta para empezar</li><li>Al terminar, eliges plan</li></ul>
+        </div>
+        <div class="plan-card featured">
+          <h3>Starter</h3>
+          <p class="price">Precio por país</p>
+          <ul><li>Un local, salón, terraza y barra</li><li>Mesas, comandas, recetas e inventario</li><li>Usuarios por departamento con bitácora</li><li>Factura electrónica donde haya proveedor integrado</li></ul>
+        </div>
+        <div class="plan-card">
+          <h3>Pro</h3>
+          <p class="price">Precio por país</p>
+          <ul><li>Todo lo de Starter</li><li>Nómina, contabilidad y reportes de rentabilidad</li><li>Domicilios propios y de plataformas</li><li>Migración asistida desde tu Excel</li></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="preguntas">
+    <div class="wrap">
+      <div class="sec-head">
+        <p class="eyebrow">Preguntas frecuentes</p>
+        <h2>Antes de decidir</h2>
+      </div>
+      <div class="faq">
+        <details open><summary>¿La factura que emite el sistema es legal en mi país?</summary><p>Sí, cuando el negocio conecta el proveedor autorizado por su autoridad fiscal. Hoy hay integración con Alegra (DIAN, Colombia), Facturama (SAT, México) y Nubefact (SUNAT, Perú), y un modo manual para registrar el número fiscal emitido por otro medio. Sin proveedor configurado, el documento sale marcado como interno y sin validez fiscal. En Venezuela se integra la máquina fiscal o la imprenta digital que use el negocio.</p></details>
+        <details><summary>¿El sistema calcula la nómina según la ley de mi país?</summary><p>Hoy calcula horas, salario bruto y neto con deducciones configurables. El cálculo legal completo por país (prestaciones, recargos, utilidades, aportes) está en desarrollo y siempre debe validarlo un especialista local.</p></details>
+        <details><summary>¿Quién es dueño de los datos?</summary><p>El restaurante. Actuamos como encargados del tratamiento: no vendemos ni cedemos los datos, y el negocio puede exportarlos al terminar. Las contraseñas y PIN se guardan cifrados.</p></details>
+        <details><summary>¿Puedo pasar mi recetario de Excel?</summary><p>Sí. Tenemos plantillas de carga y un proceso de limpieza que detecta precios duplicados, unidades inconsistentes, fórmulas rotas y platos sin costo antes de cargarlos.</p></details>
+        <details><summary>¿Funciona si se cae el internet?</summary><p>Todavía no tiene modo sin conexión; está en la hoja de ruta. Recomendamos un internet de respaldo (por ejemplo, datos móviles) para el servicio en sala.</p></details>
+        <details><summary>¿Cuántas mesas puedo configurar?</summary><p>El salón principal arranca con 30 mesas como mínimo, la terraza con las que indiques al registrarte, y puedes agregar barra, VIP y delivery. Las mesas se pueden unir, separar y transferir.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><b>Living POS</b> · Software de gestión para restaurantes, bares y cocinas.</p>
+    <p>Los perfiles legales por país son parámetros de referencia con fecha de revisión y no constituyen asesoría legal ni tributaria. Cada negocio es responsable de validar su configuración con su contador o abogado local y de contar con las licencias de su establecimiento.</p>
+  </div>
+</footer>
+
+<div class="sheet-back" id="sheetBack" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+
+<script>
+const COUNTRIES = [{"code":"VE","name":"Venezuela","cur":"VES","sym":"Bs.","tax":"IVA","rate":16,"auth":"SENIAT","inv":"Factura por máquina fiscal homologada o por imprenta digital autorizada por el SENIAT","prov":null,"data":"Sin ley general de datos personales; aplica el habeas data (art. 28 de la Constitución)","labor":"LOTTT (prestaciones sociales, utilidades, vacaciones y bono vacacional, cestaticket, IVSS, FAOV, INCES)","tips":"Recargo de servicio del 10 % según usos locales; validar su tratamiento laboral","notes":["IGTF sobre pagos en divisas según la condición del contribuyente","Reconversión monetaria de 2021 en el histórico de precios"]},{"code":"CO","name":"Colombia","cur":"COP","sym":"$","tax":"INC","rate":8,"auth":"DIAN","inv":"Factura electrónica de venta o documento equivalente electrónico (POS) validado por la DIAN","prov":"alegra","data":"Ley 1581 de 2012 (Habeas Data) y Decreto 1377 de 2013","labor":"Código Sustantivo del Trabajo y reforma laboral Ley 2466 de 2025 (recargos dominicales y nocturnos graduales)","tips":"Propina voluntaria, sugerida hasta 10 %; el cliente puede rechazarla y no es ingreso del establecimiento","notes":["Restaurantes y bares: impuesto nacional al consumo 8 %; franquicias facturan IVA 19 %"]},{"code":"MX","name":"México","cur":"MXN","sym":"$","tax":"IVA","rate":16,"auth":"SAT","inv":"CFDI 4.0 emitido por un proveedor de certificación (PAC)","prov":"facturama","data":"Ley Federal de Protección de Datos Personales en Posesión de los Particulares (2025)","labor":"Ley Federal del Trabajo (IMSS, INFONAVIT, aguinaldo, prima vacacional, PTU)","tips":"Propina voluntaria","notes":["Tasa de IVA 8 % en región fronteriza para contribuyentes inscritos"]},{"code":"PE","name":"Perú","cur":"PEN","sym":"S/","tax":"IGV","rate":18,"auth":"SUNAT","inv":"Comprobante de pago electrónico (boleta / factura) vía OSE o SEE-SUNAT","prov":"nubefact","data":"Ley 29733 de Protección de Datos Personales y su reglamento","labor":"Régimen laboral general / MYPE (CTS, gratificaciones, EsSalud)","tips":"Propina voluntaria","notes":["Tasa reducida temporal de IGV para MYPE de restaurantes: confirmar vigencia"]},{"code":"CL","name":"Chile","cur":"CLP","sym":"$","tax":"IVA","rate":19,"auth":"SII","inv":"Boleta y factura electrónica del SII","prov":null,"data":"Ley 19.628, reemplazada por la Ley 21.719 desde el 1 de diciembre de 2026","labor":"Código del Trabajo","tips":"Propina sugerida 10 % voluntaria (Ley 20.918), informada en la cuenta","notes":[]},{"code":"AR","name":"Argentina","cur":"ARS","sym":"$","tax":"IVA","rate":21,"auth":"ARCA (ex AFIP)","inv":"Factura electrónica ARCA","prov":null,"data":"Ley 25.326 de Protección de Datos Personales","labor":"Ley de Contrato de Trabajo 20.744 y convenio gastronómico","tips":"Propina voluntaria","notes":[]},{"code":"EC","name":"Ecuador","cur":"USD","sym":"$","tax":"IVA","rate":15,"auth":"SRI","inv":"Comprobantes electrónicos autorizados por el SRI","prov":null,"data":"Ley Orgánica de Protección de Datos Personales (2021)","labor":"Código del Trabajo","tips":"Recargo de servicio del 10 % según el establecimiento","notes":[]},{"code":"UY","name":"Uruguay","cur":"UYU","sym":"$","tax":"IVA","rate":22,"auth":"DGI","inv":"Comprobante fiscal electrónico (CFE) de la DGI","prov":null,"data":"Ley 18.331 de Protección de Datos Personales","labor":"Normativa laboral y consejos de salarios del sector","tips":"Propina voluntaria","notes":["Reducciones de IVA por pago electrónico en servicios gastronómicos: validar vigencia"]},{"code":"PA","name":"Panamá","cur":"USD","sym":"B/.","tax":"ITBMS","rate":7,"auth":"DGI","inv":"Factura electrónica DGI (PAC autorizado)","prov":null,"data":"Ley 81 de 2019 de Protección de Datos Personales","labor":"Código de Trabajo","tips":"Propina voluntaria","notes":["ITBMS 10 % en bebidas alcohólicas"]},{"code":"DO","name":"República Dominicana","cur":"DOP","sym":"RD$","tax":"ITBIS","rate":18,"auth":"DGII","inv":"Comprobante fiscal electrónico (e-CF) de la DGII","prov":null,"data":"Ley 172-13 de Protección de Datos Personales","labor":"Código de Trabajo","tips":"Propina legal del 10 % para el personal","notes":[]},{"code":"CR","name":"Costa Rica","cur":"CRC","sym":"₡","tax":"IVA","rate":13,"auth":"Ministerio de Hacienda","inv":"Comprobante electrónico de Hacienda","prov":null,"data":"Ley 8968 de Protección de la Persona frente al Tratamiento de sus Datos Personales","labor":"Código de Trabajo","tips":"Cargo de servicio del 10 % según la ley","notes":[]},{"code":"BR","name":"Brasil","cur":"BRL","sym":"R$","tax":"ICMS","rate":17,"auth":"SEFAZ (estatal)","inv":"NFC-e / NF-e autorizada por la SEFAZ del estado","prov":null,"data":"LGPD — Lei 13.709/2018","labor":"CLT","tips":"Gorjeta (taxa de serviço) regulada por la Lei 13.419/2017","notes":["Reforma tributaria (CBS/IBS) en transición: validar con contador","La interfaz está en español"]},{"code":"OTHER","name":"Otro país","cur":"USD","sym":"$","tax":"IVA","rate":0,"auth":"Autoridad tributaria local","inv":"Validar el régimen de facturación local antes de operar","prov":null,"data":"Validar la ley local de datos personales","labor":"Validar la legislación laboral local","tips":"Validar la regulación local","notes":[]}];
+const DEMO_PIN = '1234';
+const MENU = [
+  { id: 'd1', cat: 'Desayunos', name: 'Desayuno criollo con mechada', price: 9.5, st: 'cocina' },
+  { id: 'd2', cat: 'Desayunos', name: 'Arepas rellenas (2)', price: 6.0, st: 'cocina' },
+  { id: 'e1', cat: 'Entradas', name: 'Tequeños (6)', price: 7.0, st: 'cocina' },
+  { id: 'e2', cat: 'Entradas', name: 'Ensalada César con pollo', price: 8.5, st: 'cocina' },
+  { id: 'p1', cat: 'Principales', name: 'Solomo a la plancha', price: 16.0, st: 'cocina' },
+  { id: 'p2', cat: 'Principales', name: 'Pescado a la menier', price: 14.0, st: 'cocina' },
+  { id: 'p3', cat: 'Principales', name: 'Paella de mariscos x2', price: 32.0, st: 'cocina' },
+  { id: 'p4', cat: 'Principales', name: 'Pollo a la plancha', price: 10.5, st: 'cocina' },
+  { id: 'b1', cat: 'Bebidas', name: 'Jugo de patilla', price: 3.0, st: 'bar' },
+  { id: 'b2', cat: 'Bebidas', name: 'Mojito', price: 7.5, st: 'bar' },
+  { id: 'b3', cat: 'Bebidas', name: 'Cerveza nacional', price: 3.5, st: 'bar' },
+  { id: 'b4', cat: 'Bebidas', name: 'Café con leche grande', price: 2.5, st: 'bar' },
+  { id: 'q1', cat: 'Postres', name: 'Torta de zanahoria', price: 6.5, st: 'cocina' },
+  { id: 'q2', cat: 'Postres', name: 'Tiramisú', price: 7.0, st: 'cocina' }
+];
+const NOTES = ['Sin sal', 'Sin cebolla', 'Término medio', 'Bien cocido', 'Salsa aparte', 'Sin hielo', 'Para llevar'];
+const ZONES = [
+  { key: 'salon', label: 'Salón', prefix: 'S', n: 30 },
+  { key: 'terraza', label: 'Terraza', prefix: 'T', n: 10 },
+  { key: 'barra', label: 'Barra', prefix: 'B', n: 6 }
+];
+const STATUS_LABEL = { libre: 'Libre', ocupada: 'Ocupada', por_limpiar: 'Por limpiar', reservada: 'Reservada', unida: 'Unida', bloqueada: 'Bloqueada' };
+
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+const state = {
+  zone: 'salon', cat: 'Principales', country: 'VE', sel: null, kds: [],
+  tables: [], orders: {}
+};
+// Plano de ejemplo con algunas mesas ya en servicio
+ZONES.forEach(z => { for (let i = 1; i <= z.n; i++) state.tables.push({ id: z.prefix + String(i).padStart(2, '0'), zone: z.key, status: 'libre' }); });
+[['S03', 'ocupada'], ['S07', 'ocupada'], ['S12', 'reservada'], ['S15', 'por_limpiar'], ['S21', 'bloqueada'], ['T02', 'ocupada'], ['T05', 'reservada'], ['B01', 'ocupada']]
+  .forEach(([id, st]) => { state.tables.find(t => t.id === id).status = st; });
+
+const country = () => COUNTRIES.find(c => c.code === state.country) || COUNTRIES[0];
+const money = (n) => n.toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function totals(o) {
+  const active = o.items.filter(i => !i.void);
+  const consumo = active.reduce((s, i) => s + i.price * i.qty, 0);
+  const desc = o.disc ? consumo * o.disc / 100 : 0;
+  const base = consumo - desc;
+  const c = country();
+  const tax = base * c.rate / 100;
+  const total = base + tax;
+  const paid = o.payments.reduce((s, p) => s + p.amount, 0);
+  return { consumo, desc, base, tax, total, paid, balance: Math.max(0, +(total - paid).toFixed(2)) };
+}
+
+function toast(msg, err) {
+  const t = $('#toast');
+  t.textContent = msg; t.className = 'toast' + (err ? ' err' : ''); t.hidden = false;
+  clearTimeout(toast.h); toast.h = setTimeout(() => { t.hidden = true; }, 3800);
+}
+
+/* ---------- Plano ---------- */
+function renderZones() {
+  $('#zoneTabs').innerHTML = ZONES.map(z => {
+    const list = state.tables.filter(t => t.zone === z.key);
+    const busy = list.filter(t => t.status === 'ocupada' || t.status === 'unida').length;
+    return `<button class="tab" aria-pressed="${state.zone === z.key}" data-zone="${z.key}">${z.label}<small>${busy}/${list.length}</small></button>`;
+  }).join('');
+  const all = state.tables.filter(t => t.status === 'ocupada' || t.status === 'unida').length;
+  $('#occupancy').textContent = `Ocupación ${Math.round(all / state.tables.length * 100)} %`;
+}
+function renderPlan() {
+  $('#plan').innerHTML = state.tables.filter(t => t.zone === state.zone).map(t => {
+    const o = state.orders[t.id];
+    const extra = o ? money(totals(o).total) : STATUS_LABEL[t.status];
+    return `<button class="mesa ${t.status} ${state.sel === t.id ? 'sel' : ''}" data-t="${t.id}" aria-label="Mesa ${t.id}, ${STATUS_LABEL[t.status]}">${t.id}<small>${esc(extra)}</small></button>`;
+  }).join('');
+}
+function clickTable(id) {
+  const t = state.tables.find(x => x.id === id);
+  if (t.status === 'bloqueada') return toast(`La mesa ${id} está bloqueada por gerencia.`, true);
+  if (t.status === 'por_limpiar') {
+    t.status = 'libre'; toast(`Mesa ${id} marcada como limpia y libre.`); return renderAll();
+  }
+  if (t.status === 'unida') {
+    const main = Object.values(state.orders).find(o => o.merged.includes(id));
+    if (main) { state.sel = main.table; return renderAll(); }
+  }
+  if (t.status === 'ocupada' && !state.orders[id]) return toast(`La mesa ${id} la atiende otro mesero.`, true);
+  if (t.status === 'libre' || t.status === 'reservada') return openSheet('open', { id });
+  state.sel = id; renderAll();
+}
+
+/* ---------- Menú ---------- */
+function renderMenu() {
+  const wrap = $('#menuWrap');
+  wrap.hidden = !state.sel;
+  if (!state.sel) return;
+  const cats = [...new Set(MENU.map(m => m.cat))];
+  $('#catTabs').innerHTML = cats.map(c => `<button class="tab" aria-pressed="${state.cat === c}" data-cat="${c}">${c}</button>`).join('');
+  $('#menu').innerHTML = MENU.filter(m => m.cat === state.cat).map(m =>
+    `<button class="dish" data-dish="${m.id}"><b>${esc(m.name)}</b><span class="meta"><span>${money(m.price)}</span><span class="chip">receta ✓</span></span></button>`).join('');
+}
+
+/* ---------- Cuenta ---------- */
+function renderAccount() {
+  const o = state.orders[state.sel];
+  if (!o) {
+    $('#accTitle').textContent = 'Cuenta';
+    $('#accChip').textContent = 'Elige una mesa'; $('#accChip').className = 'chip blue';
+    $('#accBody').innerHTML = '<p class="empty">Toca una mesa libre (verde) para abrirla.</p>';
+    return;
+  }
+  const t = totals(o); const c = country();
+  $('#accTitle').textContent = `Mesa ${o.table}${o.merged.length ? ' + ' + o.merged.join(' + ') : ''}`;
+  $('#accChip').textContent = `${o.guests} pax · ${c.name}`; $('#accChip').className = 'chip';
+  const lines = o.items.length ? o.items.map((i, idx) => `
+    <div class="line" ${i.void ? 'style="opacity:.45;text-decoration:line-through"' : ''}>
+      <span class="qty">${i.qty}</span>
+      <span><span>${esc(i.name)}</span>
+        <span class="sub">${i.seat ? 'C' + i.seat + ' · ' : ''}${i.notes ? esc(i.notes) + ' · ' : ''}${i.void ? 'anulado' : i.ks}</span></span>
+      <span style="display:grid;justify-items:end;gap:4px"><span class="amt">${money(i.price * i.qty)}</span>
+        ${i.void ? '' : `<span class="acts"><button class="btn btn-ghost btn-sm" data-mod="${idx}">Modificar</button><button class="btn btn-ghost btn-sm" data-void="${idx}" style="color:var(--ocupada)">Anular</button></span>`}</span>
+    </div>`).join('') : '<p class="empty">Toca un plato del menú para incluirlo.</p>';
+  $('#accBody').innerHTML = `
+    <div class="lines">${lines}</div>
+    <div class="totals">
+      <div><span>Consumo</span><span>${money(t.consumo)}</span></div>
+      ${t.desc ? `<div style="color:var(--ocupada)"><span>Descuento ${o.disc} % (PIN)</span><span>-${money(t.desc)}</span></div>` : ''}
+      <div><span>Base</span><span>${money(t.base)}</span></div>
+      <div><span>${esc(c.tax)} ${c.rate} %</span><span>${money(t.tax)}</span></div>
+      <div class="grand"><span>Total</span><span>${money(t.total)}</span></div>
+      ${t.paid ? `<div><span>Pagado</span><span>${money(t.paid)}</span></div><div class="grand"><span>Saldo</span><span>${money(t.balance)}</span></div>` : ''}
+    </div>
+    <div class="acts-grid">
+      <button class="btn btn-ghost btn-sm" data-act="disc">Descuento / cortesía</button>
+      <button class="btn btn-ghost btn-sm" data-act="merge">Unir mesa</button>
+      <button class="btn btn-ghost btn-sm" data-act="transfer">Transferir mesa</button>
+      <button class="btn btn-ghost btn-sm" data-act="back">Volver al plano</button>
+    </div>
+    <button class="btn btn-primary pay" data-act="pay" ${o.items.some(i => !i.void) ? '' : 'disabled'}>Cobrar ${money(t.balance)}</button>`;
+}
+
+function renderKds() {
+  const k = $('#kds');
+  if (!state.kds.length) { k.innerHTML = '<p class="empty">Sin comandas pendientes.</p>'; return; }
+  k.innerHTML = state.kds.slice(-8).reverse().map(x =>
+    `<div class="kds-t ${x.ks === 'listo' ? 'listo' : ''}"><b>${x.table}</b> · ${x.st}<br>${x.qty}× ${esc(x.name)}${x.notes ? '<br><i>' + esc(x.notes) + '</i>' : ''}<br>${x.ks}</div>`).join('');
+}
+
+function renderAll() { renderZones(); renderPlan(); renderMenu(); renderAccount(); renderKds(); }
+
+/* ---------- Hojas ---------- */
+function closeSheet() { $('#sheetBack').hidden = true; }
+function openSheet(kind, data) {
+  const s = $('#sheet'); const o = state.orders[state.sel];
+  let html = '';
+  if (kind === 'open') {
+    html = `<h3>Abrir mesa ${data.id}<button class="btn btn-ghost btn-sm" data-close>✕</button></h3>
+      <div class="field"><span>Comensales</span><div class="stepper"><button class="btn btn-ghost btn-sm" data-step="-1">−</button><b id="sv">2</b><button class="btn btn-ghost btn-sm" data-step="1">+</button></div></div>
+      <button class="btn btn-primary" id="ok">Abrir y tomar pedido</button>`;
+  }
+  if (kind === 'include' || kind === 'modify') {
+    const it = kind === 'include' ? { qty: 1, notes: '', seat: 0 } : o.items[data.idx];
+    const name = kind === 'include' ? MENU.find(m => m.id === data.dish).name : it.name;
+    const seats = Array.from({ length: o.guests }, (_, i) => i + 1);
+    html = `<h3>${kind === 'include' ? 'Incluir' : 'Modificar'}: ${esc(name)}<button class="btn btn-ghost btn-sm" data-close>✕</button></h3>
+      <div class="field"><span>Cantidad</span><div class="stepper"><button class="btn btn-ghost btn-sm" data-step="-1">−</button><b id="sv">${it.qty}</b><button class="btn btn-ghost btn-sm" data-step="1">+</button></div></div>
+      <div class="field"><span>Comensal</span><div class="chips" id="seats"><button aria-pressed="${!it.seat}" data-seat="0">Mesa</button>${seats.map(n => `<button aria-pressed="${it.seat === n}" data-seat="${n}">C${n}</button>`).join('')}</div></div>
+      <div class="field"><span>Modificadores para cocina / bar</span><div class="chips" id="notes">${NOTES.map(n => `<button aria-pressed="${(it.notes || '').includes(n)}" data-note="${n}">${n}</button>`).join('')}</div></div>
+      <button class="btn btn-primary" id="ok">${kind === 'include' ? 'Incluir en la cuenta' : 'Guardar cambios'}</button>`;
+  }
+  if (kind === 'void' || kind === 'disc') {
+    const it = kind === 'void' ? o.items[data.idx] : null;
+    const needPin = kind === 'disc' || it.ks !== 'pendiente';
+    html = `<h3>${kind === 'void' ? 'Anular: ' + esc(it.name) : 'Descuento o cortesía'}<button class="btn btn-ghost btn-sm" data-close>✕</button></h3>
+      ${kind === 'disc' ? `<div class="field"><span>Tipo</span><div class="chips" id="dtype"><button aria-pressed="true" data-d="10">10 %</button><button aria-pressed="false" data-d="20">20 %</button><button aria-pressed="false" data-d="100">Cortesía total</button></div></div>` : ''}
+      <div class="field"><span>Motivo</span><select id="reason"><option>Error de digitación</option><option>Cliente cambió de opinión</option><option>Cliente frecuente</option><option>Plato devuelto</option></select></div>
+      ${needPin ? `<label class="field"><span>PIN de supervisor (demo: 1234)</span><input type="password" inputmode="numeric" id="pin" autocomplete="off"></label>` : '<p class="lede" style="font-size:13px">Aún no se prepara: se puede anular sin PIN y el insumo vuelve al inventario.</p>'}
+      <button class="btn btn-primary" id="ok">${kind === 'void' ? 'Anular ítem' : 'Aplicar'}</button>`;
+  }
+  if (kind === 'merge' || kind === 'transfer') {
+    const free = state.tables.filter(t => t.zone === state.zone && t.id !== state.sel && (t.status === 'libre' || t.status === 'reservada'));
+    html = `<h3>${kind === 'merge' ? 'Unir mesa a esta cuenta' : 'Transferir cuenta a'}<button class="btn btn-ghost btn-sm" data-close>✕</button></h3>
+      <div class="plan">${free.map(t => `<button class="mesa ${t.status}" data-pick="${t.id}">${t.id}</button>`).join('') || '<p class="empty">No hay mesas libres en esta zona.</p>'}</div>`;
+  }
+  if (kind === 'pay') {
+    const t = totals(o);
+    html = `<h3>Cobrar · saldo ${money(t.balance)}<button class="btn btn-ghost btn-sm" data-close>✕</button></h3>
+      <div class="field"><span>Dividir cuenta</span><div class="chips" id="split"><button aria-pressed="true" data-p="1">Saldo total</button><button aria-pressed="false" data-p="2">En 2</button><button aria-pressed="false" data-p="3">En 3</button><button aria-pressed="false" data-p="seat">Comensal 1</button></div></div>
+      <div class="field"><span>Forma de pago</span><div class="chips" id="method"><button aria-pressed="true">Efectivo</button><button aria-pressed="false">Débito</button><button aria-pressed="false">Crédito</button><button aria-pressed="false">Transferencia</button><button aria-pressed="false">Pago móvil</button><button aria-pressed="false">Divisas</button></div></div>
+      <label class="field"><span>Propina (sugerida 10 %)</span><input type="number" id="tip" min="0" step="0.01" value="0"></label>
+      <p style="font-family:var(--mono);font-size:18px">A cobrar ahora: <b id="due"></b></p>
+      <button class="btn btn-primary" id="ok">Registrar pago</button>
+      ${o.payments.length ? `<div class="totals">${o.payments.map(p => `<div><span>${esc(p.label)} · ${esc(p.method)}</span><span>${money(p.amount)}${p.tip ? ' + ' + money(p.tip) : ''}</span></div>`).join('')}</div>` : ''}`;
+  }
+  s.innerHTML = html;
+  $('#sheetBack').hidden = false;
+  bindSheet(kind, data);
+}
+
+function pressOne(group, btn) { group.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === btn))); }
+
+function bindSheet(kind, data) {
+  const s = $('#sheet'); const o = state.orders[state.sel];
+  s.querySelectorAll('[data-close]').forEach(b => b.onclick = closeSheet);
+  s.querySelectorAll('[data-step]').forEach(b => b.onclick = () => {
+    const v = $('#sv'); v.textContent = Math.max(1, Math.min(kind === 'open' ? 12 : 20, +v.textContent + +b.dataset.step));
+  });
+  s.querySelectorAll('#seats button, #dtype button, #split button, #method button').forEach(b => b.onclick = () => { pressOne(b.parentElement, b); if (kind === 'pay') updateDue(); });
+  s.querySelectorAll('#notes button').forEach(b => b.onclick = () => b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')));
+  s.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => pickTable(kind, b.dataset.pick));
+  const ok = $('#ok'); if (!ok) return;
+
+  function updateDue() {
+    const t = totals(o); const p = s.querySelector('#split [aria-pressed="true"]').dataset.p;
+    let due = t.balance;
+    if (p === '2' || p === '3') due = Math.min(t.balance, t.total / +p);
+    if (p === 'seat') {
+      const factor = t.consumo ? t.total / t.consumo : 0;
+      const act = o.items.filter(i => !i.void);
+      due = Math.min(t.balance, (act.filter(i => i.seat === 1).reduce((a, i) => a + i.price * i.qty, 0) + act.filter(i => !i.seat).reduce((a, i) => a + i.price * i.qty, 0) / o.guests) * factor);
+    }
+    $('#due').textContent = money(due); $('#due').dataset.v = due.toFixed(2);
+    if (!$('#tip').dataset.touched) $('#tip').value = (due * 0.10).toFixed(2);
+  }
+  if (kind === 'pay') { $('#tip').oninput = () => { $('#tip').dataset.touched = '1'; }; updateDue(); }
+
+  ok.onclick = () => {
+    if (kind === 'open') {
+      const t = state.tables.find(x => x.id === data.id);
+      t.status = 'ocupada';
+      state.orders[data.id] = { table: data.id, guests: +$('#sv').textContent, items: [], payments: [], disc: 0, merged: [] };
+      state.sel = data.id; closeSheet(); renderAll(); toast(`Mesa ${data.id} abierta. Ahora incluye platos y bebidas.`);
+    }
+    if (kind === 'include' || kind === 'modify') {
+      const qty = +$('#sv').textContent;
+      const seat = +s.querySelector('#seats [aria-pressed="true"]').dataset.seat;
+      const notes = [...s.querySelectorAll('#notes [aria-pressed="true"]')].map(b => b.dataset.note).join(', ');
+      if (kind === 'include') {
+        const m = MENU.find(x => x.id === data.dish);
+        const item = { name: m.name, price: m.price, qty, seat, notes, st: m.st, ks: 'pendiente', void: false };
+        o.items.push(item);
+        const k = { table: o.table, name: m.name, qty, notes, st: m.st, ks: 'pendiente' };
+        state.kds.push(k); item.kds = k;
+        setTimeout(() => { if (!item.void) { item.ks = 'listo'; k.ks = 'listo'; renderAll(); } }, 6000);
+        toast(`${qty}× ${m.name} enviado a ${m.st}. Inventario descontado según receta.`);
+      } else {
+        const it = o.items[data.idx];
+        if (qty < it.qty && it.ks !== 'pendiente') { closeSheet(); return toast('Para bajar la cantidad de algo ya preparado, usa Anular con PIN.', true); }
+        Object.assign(it, { qty, seat, notes }); if (it.kds) Object.assign(it.kds, { qty, notes });
+        toast('Ítem modificado. Cocina ve el cambio.');
+      }
+      closeSheet(); renderAll();
+    }
+    if (kind === 'void' || kind === 'disc') {
+      const pinEl = $('#pin');
+      if (pinEl && pinEl.value !== DEMO_PIN) { pinEl.focus(); pinEl.style.borderColor = 'var(--ocupada)'; return toast('PIN de supervisor incorrecto. Queda registrado en la bitácora.', true); }
+      if (kind === 'void') {
+        const it = o.items[data.idx]; it.void = true;
+        state.kds = state.kds.filter(k => k !== it.kds);
+        toast(it.ks === 'pendiente' ? 'Ítem anulado; el insumo vuelve al inventario.' : 'Ítem anulado con autorización; el insumo queda como merma.');
+      } else {
+        o.disc = +s.querySelector('#dtype [aria-pressed="true"]').dataset.d;
+        toast(o.disc === 100 ? 'Cortesía total autorizada y registrada.' : `Descuento del ${o.disc} % autorizado y registrado.`);
+      }
+      closeSheet(); renderAll();
+    }
+    if (kind === 'pay') {
+      const due = +$('#due').dataset.v; if (!(due > 0)) { closeSheet(); return; }
+      const split = s.querySelector('#split [aria-pressed="true"]');
+      o.payments.push({ amount: due, tip: +$('#tip').value || 0, method: s.querySelector('#method [aria-pressed="true"]').textContent, label: split.textContent });
+      const t = totals(o);
+      if (t.balance <= 0.01) {
+        [o.table, ...o.merged].forEach(id => { state.tables.find(x => x.id === id).status = 'por_limpiar'; });
+        state.kds = state.kds.filter(k => k.table !== o.table);
+        delete state.orders[o.table]; state.sel = null;
+        closeSheet(); renderAll(); toast(`Cuenta cerrada por ${money(t.total)}. La mesa queda «por limpiar» y se puede emitir la factura.`);
+      } else {
+        closeSheet(); renderAll(); toast(`Pago parcial registrado. Saldo: ${money(t.balance)}.`); openSheet('pay');
+      }
+    }
+  };
+}
+
+function pickTable(kind, id) {
+  const o = state.orders[state.sel]; const target = state.tables.find(t => t.id === id);
+  if (kind === 'merge') { target.status = 'unida'; o.merged.push(id); toast(`Mesa ${id} unida a ${o.table}.`); }
+  else {
+    state.tables.find(t => t.id === o.table).status = 'por_limpiar';
+    target.status = 'ocupada';
+    delete state.orders[o.table]; o.table = id; state.orders[id] = o; state.sel = id;
+    state.kds.forEach(k => { if (k.table && o.items.some(i => i.kds === k)) k.table = id; });
+    toast(`Cuenta transferida a ${id}. La mesa anterior queda por limpiar.`);
+  }
+  closeSheet(); renderAll();
+}
+
+/* ---------- Eventos ---------- */
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.zone) { state.zone = b.dataset.zone; renderAll(); }
+  else if (b.dataset.t) clickTable(b.dataset.t);
+  else if (b.dataset.cat) { state.cat = b.dataset.cat; renderMenu(); }
+  else if (b.dataset.dish) openSheet('include', { dish: b.dataset.dish });
+  else if (b.dataset.mod) openSheet('modify', { idx: +b.dataset.mod });
+  else if (b.dataset.void) openSheet('void', { idx: +b.dataset.void });
+  else if (b.dataset.act === 'back') { state.sel = null; renderAll(); }
+  else if (b.dataset.act) openSheet(b.dataset.act);
+  else if (b.dataset.country) { state.country = b.dataset.country; renderLaw(); renderAccount(); }
+});
+$('#sheetBack').addEventListener('click', (e) => { if (e.target.id === 'sheetBack') closeSheet(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
+
+/* ---------- Funciones ---------- */
+const FEATURES = [
+  ['Mesas y facturación', 'Disponible', ['Salón con 30+ mesas, terraza, barra y VIP', 'Unir, separar y transferir mesas', 'Cuenta dividida por comensal, ítem o monto', 'Varias formas de pago, propina y vuelto']],
+  ['Recetas y costeo', 'Disponible', ['Costo automático con el precio vigente del insumo', 'Costo teórico guardado en cada venta', 'Margen por plato (solo para gerencia y cocina)', 'Subrecetas, rendimientos y unidades: fase 1']],
+  ['Cocina y bar (KDS)', 'Disponible', ['Comanda en tiempo real por estación', 'Modificadores y comensal visibles', 'Tiempo de espera con alerta', 'Producción batch: fase 2']],
+  ['Inventario', 'Disponible', ['Descuento automático por receta al vender', 'Reposición al anular antes de preparar', 'Alertas de stock mínimo', 'Compras, almacenes y toma física: fase 1']],
+  ['Seguridad y auditoría', 'Disponible', ['Clave única por persona y departamento', 'PIN de supervisor para anulaciones y descuentos', 'Bloqueo por intentos y expiración de clave', 'Bitácora con antes, después e IP']],
+  ['Facturación y cumplimiento', 'Disponible', ['Perfil legal por país', 'Integración DIAN, SAT y SUNAT vía proveedor', 'Aceptación de términos registrada', 'Venezuela y otros países: fase 1']],
+  ['Nómina y asistencia', 'Parcial', ['Marcaje de entrada y salida', 'Nómina bruta y neta configurable', 'Reparto de propinas por puntos: fase 1', 'Cálculo legal por país: fase 2']],
+  ['Contabilidad', 'Parcial', ['Bancos, gastos e ingresos', 'Venta neta registrada al cerrar la cuenta', 'Estado de resultados', 'Asientos automáticos y conciliación: fase 2']],
+  ['Dashboards de rentabilidad', 'Fase 1', ['Food cost, beverage cost y prime cost', 'Ingeniería de menú: estrellas, caballos, puzzles y perros', 'Real contra teórico y fugas', 'Tablero por rol: dueño, chef, bar, RRHH y contador']]
+];
+$('#features').innerHTML = FEATURES.map(([t, st, items]) =>
+  `<div class="feat"><span class="chip status ${st === 'Disponible' ? '' : st === 'Parcial' ? 'warn' : 'blue'}">${st}</span><h3>${t}</h3><ul>${items.map(i => `<li>${i}</li>`).join('')}</ul></div>`).join('');
+
+/* ---------- Matriz ---------- */
+const ROLES = ['Gerencia', 'Contaduría', 'RRHH', 'Cocina', 'Bar', 'Mesero', 'Caja', 'Almacén', 'Auditoría'];
+const MATRIX = [
+  ['Mesas', 'VCEDANX', '', '', '', 'VE', 'VE', 'VE', '', 'VX'],
+  ['Pedidos', 'VCEDANX', '', '', '', 'VCE', 'VCE', 'V', '', 'VX'],
+  ['Cobros', 'VCEDANX', 'VX', '', '', 'VC', 'VC', 'VCNX', '', 'VX'],
+  ['Autorizaciones (PIN)', 'VA', '', '', '', '', '', '', '', 'V'],
+  ['Recetas y costos', 'VCEDANX', 'V', '', 'VCE', 'VCE', '', '', 'V', 'VX'],
+  ['Inventario', 'VCEDANX', 'VX', '', 'V', 'V', '', '', 'VCEX', 'VX'],
+  ['Nómina', 'VAX', 'VX', 'VCEAX', '', '', '', '', '', 'VX'],
+  ['Contabilidad', 'VAX', 'VCEAX', '', '', '', '', '', '', 'VX'],
+  ['Facturación', 'VCEANX', 'VCEANX', '', '', '', 'C', 'VC', '', 'VX'],
+  ['Bitácora', 'VX', '', '', '', '', '', '', '', 'VX']
+];
+$('#matrix').innerHTML = `<thead><tr><th>Módulo</th>${ROLES.map(r => `<th>${r}</th>`).join('')}</tr></thead><tbody>${
+  MATRIX.map(([m, ...p]) => `<tr><td><b>${m}</b></td>${p.map(x => x ? `<td class="perm">${x}</td>` : '<td class="perm none">—</td>').join('')}</tr>`).join('')}</tbody>`;
+
+/* ---------- Países ---------- */
+function renderLaw() {
+  $('#countryList').innerHTML = COUNTRIES.map(c =>
+    `<button aria-pressed="${state.country === c.code}" data-country="${c.code}"><span>${esc(c.name)}</span><small>${esc(c.tax)} ${c.rate} %</small></button>`).join('');
+  const c = country();
+  $('#lawCard').innerHTML = `
+    <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline">
+      <h3 style="font-size:26px;font-stretch:85%">${esc(c.name)}</h3>
+      <span class="chip ${c.prov ? '' : 'warn'}">${c.prov ? 'Factura integrada vía ' + esc(c.prov) : 'Facturación por integrar o registro manual'}</span>
+    </div>
+    <dl>
+      <dt>Moneda e impuesto</dt><dd>${esc(c.cur)} (${esc(c.sym)}) · ${esc(c.tax)} ${c.rate} %</dd>
+      <dt>Autoridad fiscal</dt><dd>${esc(c.auth)}</dd>
+      <dt>Facturación</dt><dd>${esc(c.inv)}</dd>
+      <dt>Datos personales</dt><dd>${esc(c.data)}</dd>
+      <dt>Régimen laboral</dt><dd>${esc(c.labor)}</dd>
+      <dt>Propinas</dt><dd>${esc(c.tips)}</dd>
+      ${c.notes.length ? `<dt>A validar</dt><dd>${c.notes.map(esc).join('<br>')}</dd>` : ''}
+    </dl>
+    <p class="disclaimer">Parámetros de referencia revisados el 2 de octubre de 2026. No constituyen asesoría legal ni tributaria: cada negocio debe validarlos con su contador o abogado local antes de operar. La demo de arriba ya calcula la cuenta con el impuesto de ${esc(c.name)}.</p>`;
+}
+
+renderAll();
+renderLaw();
+</script>
+
+</body>
+</html>
