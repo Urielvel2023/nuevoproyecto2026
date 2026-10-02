@@ -138,6 +138,21 @@ const migrations = [
         `ALTER TABLE ${t} ADD COLUMN IF NOT EXISTS ${c} ${type.replace('{REAL}', 'DOUBLE PRECISION')};`).join('\n')}
       ${NEW_TABLES.replace(/\{REAL\}/g, 'DOUBLE PRECISION')}
     `
+  },
+  {
+    // Aceptación de términos, privacidad y responsabilidad legal local
+    id: '002_cumplimiento_legal',
+    sqlite(sqlite) {
+      for (const col of ['legal_version TEXT', 'legal_accepted_at TEXT', 'legal_accepted_by TEXT', 'legal_accepted_ip TEXT']) {
+        sqlite.exec(`ALTER TABLE restaurants ADD COLUMN ${col}`);
+      }
+    },
+    pg: `
+      ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS legal_version TEXT;
+      ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS legal_accepted_at TEXT;
+      ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS legal_accepted_by TEXT;
+      ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS legal_accepted_ip TEXT;
+    `
   }
 ];
 

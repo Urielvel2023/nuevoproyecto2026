@@ -14,6 +14,8 @@ import Payroll from './pages/Admin/Payroll';
 import Subscription from './pages/Admin/Subscription';
 import AuditLog from './pages/Admin/AuditLog';
 import MyAccount from './pages/MyAccount';
+import Compliance from './pages/Admin/Compliance';
+import LegalDoc from './pages/LegalDoc';
 import { SCREENS } from './routesConfig';
 
 import WaiterTables from './pages/Waiter/Tables';
@@ -43,6 +45,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/pedido/:restaurantId" element={<PublicOrder />} />
+        <Route path="/legal/:doc" element={<LegalDoc />} />
         <Route path="/" element={<Protected><Layout /></Protected>}>
           <Route index element={<HomeRedirect />} />
 
@@ -61,6 +64,7 @@ export default function App() {
           <Route path="domicilios" element={<Protected module="delivery"><Delivery /></Protected>} />
 
           <Route path="admin/bitacora" element={<Protected module="bitacora"><AuditLog /></Protected>} />
+          <Route path="admin/cumplimiento" element={<Protected module="cumplimiento"><Compliance /></Protected>} />
           <Route path="mi-cuenta" element={<Protected><MyAccount /></Protected>} />
           <Route path="cocina" element={<Protected module="kds"><Kitchen /></Protected>} />
         </Route>

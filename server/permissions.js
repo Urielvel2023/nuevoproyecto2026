@@ -57,6 +57,7 @@ const MATRIX = {
   delivery:       { gerencia: ALL, mesero: 'VCE', caja: 'VCE', auditoria: 'V' },
   usuarios:       { gerencia: 'VCE', rrhh: 'V', auditoria: 'V' },
   bitacora:       { gerencia: 'VX', auditoria: 'VX' },
+  cumplimiento:   { gerencia: 'V', contaduria: 'V', auditoria: 'V' },
   suscripcion:    {}
 };
 

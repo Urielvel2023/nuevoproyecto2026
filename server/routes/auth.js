@@ -6,6 +6,7 @@ const { signToken, authMiddleware, requirePermission } = require('../auth');
 const { ROLES, ROLE_LABELS, permissionsFor } = require('../permissions');
 const { audit } = require('../services/audit');
 const { ensureZoneTables } = require('../services/tables');
+const { getCountry, LEGAL_VERSION } = require('../compliance');
 const ah = require('../utils/asyncHandler');
 
 const router = express.Router();
@@ -34,11 +35,16 @@ function sessionPayload(u) {
 // Registrar un nuevo restaurante (tenant) + su usuario admin
 router.post('/register-restaurant', ah(async (req, res) => {
   const { restaurantName, country, currency, currencySymbol, taxName, taxRate,
-          adminName, email, password, terraceTables } = req.body;
+          adminName, email, password, terraceTables, acceptTerms } = req.body;
 
   if (!restaurantName || !adminName || !email || !password) {
     return res.status(400).json({ error: 'Faltan campos requeridos' });
   }
+  if (acceptTerms !== true) {
+    return res.status(400).json({ error: 'Debes aceptar los términos, la política de privacidad y la responsabilidad de cumplir la ley de tu país' });
+  }
+  // Valores por defecto según el perfil legal del país (configurables después)
+  const profile = getCountry(country) || getCountry('OTHER');
   if (password.length < MIN_PASSWORD_LENGTH) {
     return res.status(400).json({ error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres` });
   }
@@ -53,12 +59,14 @@ router.post('/register-restaurant', ah(async (req, res) => {
 
   await db.tx(async (t) => {
     await t.run(`
-      INSERT INTO restaurants (id, name, country, currency, currency_symbol, tax_name, tax_rate)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO restaurants (id, name, country, currency, currency_symbol, tax_name, tax_rate,
+                               legal_version, legal_accepted_at, legal_accepted_by, legal_accepted_ip)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       restaurantId, restaurantName,
-      country || 'CO', currency || 'COP', currencySymbol || '$',
-      taxName || 'IVA', taxRate != null ? taxRate : 0
+      profile.code, currency || profile.currency, currencySymbol || profile.symbol,
+      taxName || profile.tax_name, taxRate != null ? taxRate : profile.tax_rate,
+      LEGAL_VERSION, now, userId, req.headers['x-forwarded-for'] || req.ip || null
     ]);
 
     await t.run(`

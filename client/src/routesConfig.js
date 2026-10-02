@@ -13,6 +13,7 @@ export const SCREENS = [
   { path: '/admin/contabilidad', label: '💰 Contabilidad', module: 'contabilidad' },
   { path: '/admin/nomina', label: '🧑‍💼 Nómina', module: 'nomina' },
   { path: '/admin/personal', label: '👥 Usuarios y accesos', module: 'usuarios' },
+  { path: '/admin/cumplimiento', label: '⚖️ Cumplimiento legal', module: 'cumplimiento' },
   { path: '/admin/bitacora', label: '🕵️ Bitácora', module: 'bitacora' },
   { path: '/admin/suscripcion', label: '💳 Suscripción', module: 'suscripcion' },
   { path: '/mi-cuenta', label: '🔑 Mi clave / PIN', module: null }

@@ -41,6 +41,7 @@ io.on('connection', (socket) => {
 // moduleGuard asocia cada router a un módulo de la matriz de accesos
 // (permissions.js), para que cada departamento entre solo a lo suyo.
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/compliance', require('./routes/compliance'));
 app.use('/api/inventory', moduleGuard('inventario'), require('./routes/inventory'));
 app.use('/api/recipes', moduleGuard('recetas'), require('./routes/recipes'));
 app.use('/api/menu', moduleGuard('menu'), require('./routes/menu'));
