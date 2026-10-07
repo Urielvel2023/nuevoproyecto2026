@@ -1,0 +1,6 @@
+# SITE_ADDRESS = tu dominio (ej. app.tudominio.com) para HTTPS automático,
+# o ":80" para entrar por la IP del VPS sin dominio (solo HTTP).
+{$SITE_ADDRESS} {
+	encode gzip
+	reverse_proxy app:4000
+}

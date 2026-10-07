@@ -168,6 +168,20 @@ Sin estas variables, el sistema funciona exactamente igual (la pestaña Suscripc
 
 ---
 
+## Instalar en un VPS (Hostinger u otro)
+
+Con Docker, HTTPS automático y respaldos diarios, en 3 comandos:
+
+```bash
+git clone -b claude/living-restaurant-system-jxwjgr https://github.com/Urielvel2023/nuevoproyecto2026.git /opt/living-pos
+cd /opt/living-pos
+DOMAIN=app.tudominio.com bash deploy/vps/instalar.sh
+```
+
+Guía completa paso a paso (hPanel, DNS, actualizar, respaldar y restaurar): [`docs/DESPLIEGUE_VPS_HOSTINGER.md`](docs/DESPLIEGUE_VPS_HOSTINGER.md).
+
+---
+
 ## Desplegar en Render
 
 ### Opción rápida (recomendada): Blueprint en un clic
