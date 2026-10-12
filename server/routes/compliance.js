@@ -1,24 +1,15 @@
-// Cumplimiento legal por país: perfiles públicos (para el registro), documentos
-// legales y el estado de cumplimiento del restaurante autenticado.
+// Cumplimiento legal por país: perfiles públicos (para el registro) y el estado
+// de cumplimiento del restaurante autenticado.
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
 const db = require('../db');
 const { authMiddleware } = require('../auth');
 const { listCountries, getCountry, LEGAL_VERSION, REVIEWED_AT, VERIFY } = require('../compliance');
 const ah = require('../utils/asyncHandler');
 
 const router = express.Router();
-const LEGAL_DOCS = { terminos: 'terminos.md', privacidad: 'privacidad.md' };
 
 router.get('/countries', (req, res) => {
   res.json({ legal_version: LEGAL_VERSION, reviewed_at: REVIEWED_AT, disclaimer: VERIFY, countries: listCountries() });
-});
-
-router.get('/legal/:doc', (req, res) => {
-  const file = LEGAL_DOCS[req.params.doc];
-  if (!file) return res.status(404).json({ error: 'Documento no encontrado' });
-  res.type('text/markdown').send(fs.readFileSync(path.join(__dirname, '..', 'legal', file), 'utf8'));
 });
 
 // Estado de cumplimiento del restaurante: lo que falta configurar para operar legalmente

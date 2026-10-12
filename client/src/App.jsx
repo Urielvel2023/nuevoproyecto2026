@@ -3,6 +3,10 @@ import { useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Layout from './Layout';
 
+import Landing from './pages/Landing';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+
 import Inventory from './pages/Admin/Inventory';
 import Recipes from './pages/Admin/Recipes';
 import Menu from './pages/Admin/Menu';
@@ -14,8 +18,8 @@ import Payroll from './pages/Admin/Payroll';
 import Subscription from './pages/Admin/Subscription';
 import AuditLog from './pages/Admin/AuditLog';
 import MyAccount from './pages/MyAccount';
+import Settings from './pages/Admin/Settings';
 import Compliance from './pages/Admin/Compliance';
-import LegalDoc from './pages/LegalDoc';
 import { SCREENS } from './routesConfig';
 
 import WaiterTables from './pages/Waiter/Tables';
@@ -28,7 +32,7 @@ import Kitchen from './pages/Kitchen/Kitchen';
 function Protected({ module, action = 'ver', children }) {
   const { user, can } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  if (module && !can(module, action)) return <Navigate to="/" replace />;
+  if (module && !can(module, action)) return <Navigate to="/app" replace />;
   return children;
 }
 
@@ -36,17 +40,19 @@ function HomeRedirect() {
   const { user, can } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
   const first = SCREENS.find(s => s.module && can(s.module, s.action || 'ver'));
-  return <Navigate to={first ? first.path : '/mi-cuenta'} replace />;
+  return <Navigate to={first ? first.path : '/app/mi-cuenta'} replace />;
 }
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/terminos" element={<Terms />} />
+        <Route path="/privacidad" element={<Privacy />} />
         <Route path="/login" element={<Login />} />
         <Route path="/pedido/:restaurantId" element={<PublicOrder />} />
-        <Route path="/legal/:doc" element={<LegalDoc />} />
-        <Route path="/" element={<Protected><Layout /></Protected>}>
+        <Route path="/app" element={<Protected><Layout /></Protected>}>
           <Route index element={<HomeRedirect />} />
 
           <Route path="admin/inventario" element={<Protected module="inventario"><Inventory /></Protected>} />
@@ -64,11 +70,12 @@ export default function App() {
           <Route path="domicilios" element={<Protected module="delivery"><Delivery /></Protected>} />
 
           <Route path="admin/bitacora" element={<Protected module="bitacora"><AuditLog /></Protected>} />
+          <Route path="admin/configuracion" element={<Protected module="configuracion"><Settings /></Protected>} />
           <Route path="admin/cumplimiento" element={<Protected module="cumplimiento"><Compliance /></Protected>} />
           <Route path="mi-cuenta" element={<Protected><MyAccount /></Protected>} />
           <Route path="cocina" element={<Protected module="kds"><Kitchen /></Protected>} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/app" replace />} />
       </Routes>
     </BrowserRouter>
   );

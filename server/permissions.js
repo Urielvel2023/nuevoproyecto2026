@@ -58,6 +58,8 @@ const MATRIX = {
   usuarios:       { gerencia: 'VCE', rrhh: 'V', auditoria: 'V' },
   bitacora:       { gerencia: 'VX', auditoria: 'VX' },
   cumplimiento:   { gerencia: 'V', contaduria: 'V', auditoria: 'V' },
+  // configuración del negocio: impuesto y % de servicio
+  configuracion:  { gerencia: 'VE', contaduria: 'V', auditoria: 'V' },
   suscripcion:    {}
 };
 

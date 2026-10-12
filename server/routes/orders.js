@@ -212,16 +212,18 @@ router.get('/recent-closed', requireRole('admin'), ah(async (req, res) => {
   const rows = await db.all(`
     SELECT o.id, o.table_id, o.channel, o.customer_name, o.closed_at,
            t.name as table_name,
-           COALESCE(SUM(oi.price_snapshot * oi.quantity), 0) + o.delivery_fee as total,
            (SELECT full_number FROM tax_documents td WHERE td.order_id = o.id AND td.status != 'rechazada' LIMIT 1) as invoice_number
     FROM orders o
     LEFT JOIN tables t ON t.id = o.table_id
-    LEFT JOIN order_items oi ON oi.order_id = o.id AND oi.status = 'activo'
     WHERE o.restaurant_id = ? AND o.status = 'cerrada'
-    GROUP BY o.id, o.table_id, o.channel, o.customer_name, o.closed_at, t.name, o.delivery_fee
     ORDER BY o.closed_at DESC LIMIT 50
   `, [req.user.restaurant_id]);
-  res.json(rows);
+  // El total sale del mismo cálculo de la cuenta (descuentos, servicio, impuesto, domicilio)
+  const withTotals = await Promise.all(rows.map(async (r) => {
+    const full = await getOrderFull(db, r.id, req.user.restaurant_id);
+    return { ...r, items_total: full.items_total, delivery_fee: full.delivery_fee, total: full.total };
+  }));
+  res.json(withTotals.filter(r => r.items_total > 0));
 }));
 
 router.get('/:id', ah(async (req, res) => {

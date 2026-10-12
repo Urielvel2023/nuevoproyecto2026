@@ -31,7 +31,16 @@ if (usePostgres) {
   });
 
   const schema = fs.readFileSync(path.join(__dirname, 'schema.pg.sql'), 'utf8');
-  const ready = pool.query(schema).then(() => runPgMigrations(pool));
+  const ready = pool.query(schema).then(() => runMigrations()).then(() => runPgMigrations(pool));
+
+  // Cambios de esquema sobre una base de datos ya desplegada (Postgres sí
+  // soporta ADD COLUMN IF NOT EXISTS de forma nativa, así que no hace falta
+  // envolver esto en try/catch).
+  async function runMigrations() {
+    await pool.query(`ALTER TABLE platform_subscriptions ADD COLUMN IF NOT EXISTS provider TEXT NOT NULL DEFAULT 'stripe'`);
+    await pool.query(`ALTER TABLE platform_subscriptions ADD COLUMN IF NOT EXISTS external_reference TEXT`);
+    await pool.query(`ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS service_charge_rate DOUBLE PRECISION NOT NULL DEFAULT 0`);
+  }
 
   impl = {
     kind: 'postgres',
@@ -87,6 +96,20 @@ if (usePostgres) {
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   sqlite.exec(schema);
   const ready = runSqliteMigrations(sqlite);
+
+  // Cambios de esquema sobre una base de datos ya existente: SQLite no
+  // soporta "ADD COLUMN IF NOT EXISTS", así que se intenta y se ignora el
+  // error si la columna ya existe.
+  function ensureSqliteColumn(table, columnDef) {
+    try {
+      sqlite.exec(`ALTER TABLE ${table} ADD COLUMN ${columnDef}`);
+    } catch (e) {
+      if (!/duplicate column name/i.test(e.message)) throw e;
+    }
+  }
+  ensureSqliteColumn('platform_subscriptions', `provider TEXT NOT NULL DEFAULT 'stripe'`);
+  ensureSqliteColumn('platform_subscriptions', `external_reference TEXT`);
+  ensureSqliteColumn('restaurants', `service_charge_rate REAL NOT NULL DEFAULT 0`);
 
   impl = {
     kind: 'sqlite',

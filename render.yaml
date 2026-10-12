@@ -12,6 +12,7 @@ services:
   - type: web
     name: living-pos
     runtime: node
+    branch: main
     # "starter" no se duerme por inactividad (el plan free sí, y tarda ~1 min en despertar).
     plan: starter
     buildCommand: npm install --prefix client --include=dev && npm run build --prefix client && npm install --prefix server --omit=dev

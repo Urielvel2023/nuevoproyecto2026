@@ -2,19 +2,20 @@
 // La matriz de permisos vive en el servidor (server/permissions.js) y llega al
 // iniciar sesión; aquí solo se decide qué ve cada departamento.
 export const SCREENS = [
-  { path: '/mesero/mesas', label: '🍽️ Mesas', module: 'mesas' },
-  { path: '/cocina', label: '👨‍🍳 Cocina / Bar (KDS)', module: 'kds' },
-  { path: '/domicilios', label: '🛵 Domicilios', module: 'delivery' },
-  { path: '/admin/reportes', label: '📊 Reportes', module: 'reportes' },
-  { path: '/admin/inventario', label: '📦 Almacén', module: 'inventario' },
-  { path: '/admin/recetas', label: '📋 Recetas / Costeo', module: 'recetas' },
-  { path: '/admin/menu', label: '🍔 Menú', module: 'menu', action: 'crear' },
-  { path: '/admin/facturacion', label: '🧾 Facturación', module: 'facturacion' },
-  { path: '/admin/contabilidad', label: '💰 Contabilidad', module: 'contabilidad' },
-  { path: '/admin/nomina', label: '🧑‍💼 Nómina', module: 'nomina' },
-  { path: '/admin/personal', label: '👥 Usuarios y accesos', module: 'usuarios' },
-  { path: '/admin/cumplimiento', label: '⚖️ Cumplimiento legal', module: 'cumplimiento' },
-  { path: '/admin/bitacora', label: '🕵️ Bitácora', module: 'bitacora' },
-  { path: '/admin/suscripcion', label: '💳 Suscripción', module: 'suscripcion' },
-  { path: '/mi-cuenta', label: '🔑 Mi clave / PIN', module: null }
+  { path: '/app/mesero/mesas', label: '🍽️ Mesas', module: 'mesas' },
+  { path: '/app/cocina', label: '👨‍🍳 Cocina / Bar (KDS)', module: 'kds' },
+  { path: '/app/domicilios', label: '🛵 Domicilios', module: 'delivery' },
+  { path: '/app/admin/reportes', label: '📊 Reportes', module: 'reportes' },
+  { path: '/app/admin/inventario', label: '📦 Almacén', module: 'inventario' },
+  { path: '/app/admin/recetas', label: '📋 Recetas / Costeo', module: 'recetas' },
+  { path: '/app/admin/menu', label: '🍔 Menú', module: 'menu', action: 'crear' },
+  { path: '/app/admin/facturacion', label: '🧾 Facturación', module: 'facturacion' },
+  { path: '/app/admin/contabilidad', label: '💰 Contabilidad', module: 'contabilidad' },
+  { path: '/app/admin/nomina', label: '🧑‍💼 Nómina', module: 'nomina' },
+  { path: '/app/admin/personal', label: '👥 Usuarios y accesos', module: 'usuarios' },
+  { path: '/app/admin/configuracion', label: '⚙️ Configuración', module: 'configuracion' },
+  { path: '/app/admin/cumplimiento', label: '⚖️ Cumplimiento legal', module: 'cumplimiento' },
+  { path: '/app/admin/bitacora', label: '🕵️ Bitácora', module: 'bitacora' },
+  { path: '/app/admin/suscripcion', label: '💳 Suscripción', module: 'suscripcion' },
+  { path: '/app/mi-cuenta', label: '🔑 Mi clave / PIN', module: null }
 ];

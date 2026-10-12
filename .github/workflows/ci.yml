@@ -1,0 +1,80 @@
+# Pruebas automáticas en cada push y pull request: compila el frontend y corre
+# la prueba de humo de la API contra SQLite y contra PostgreSQL.
+name: CI
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Pruebas (${{ matrix.db }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [sqlite, postgres]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: living_pos
+          POSTGRES_USER: living_pos
+          POSTGRES_PASSWORD: ci-password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U living_pos" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            client/package-lock.json
+            server/package-lock.json
+
+      - name: Compilar frontend
+        run: npm ci --prefix client && npm run build --prefix client
+
+      - name: Instalar backend
+        run: npm ci --prefix server
+
+      - name: Iniciar servidor
+        env:
+          NODE_ENV: production
+          PORT: 4000
+          JWT_SECRET: ci-secret-solo-para-pruebas-0123456789abcdef
+          DATABASE_URL: ${{ matrix.db == 'postgres' && 'postgres://living_pos:ci-password@localhost:5432/living_pos' || '' }}
+          DATABASE_SSL: 'false'
+        run: |
+          nohup node server/index.js > server.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4000/api/health && exit 0
+            sleep 1
+          done
+          cat server.log
+          exit 1
+
+      - name: Prueba de humo de la API
+        run: BASE_URL=http://localhost:4000 npm run test:smoke --prefix server
+
+      - name: Registro del servidor (si algo falló)
+        if: failure()
+        run: cat server.log
+
+  docker:
+    name: Imagen Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir imagen
+        run: docker build -t living-pos:ci .

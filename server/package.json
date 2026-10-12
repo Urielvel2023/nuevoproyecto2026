@@ -5,7 +5,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "node index.js",
-    "seed": "node db/seed.js"
+    "seed": "node db/seed.js",
+    "test:smoke": "node test/smoke.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

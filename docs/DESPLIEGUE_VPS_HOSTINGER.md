@@ -41,11 +41,12 @@ Copia y pega, cambiando `app.tudominio.com` por tu dominio:
 
 ```bash
 apt update && apt install -y git
-git clone -b claude/living-restaurant-system-jxwjgr https://github.com/Urielvel2023/nuevoproyecto2026.git /opt/living-pos
+git clone https://github.com/Urielvel2023/nuevoproyecto2026.git /opt/living-pos
 cd /opt/living-pos
 DOMAIN=app.tudominio.com bash deploy/vps/instalar.sh
 ```
 
+- Esto descarga la rama `main`. Si todavía no fusionaste el pull request #2, agrega `-b claude/living-restaurant-system-jxwjgr` después de `git clone`.
 - **Si el repositorio es privado**, `git clone` te pide usuario y contraseña. Escribe tu usuario de GitHub y, como contraseña, un *token* creado en GitHub → Settings → Developer settings → Personal access tokens, con permiso de lectura del repositorio.
 - **Sin dominio**: ejecuta `bash deploy/vps/instalar.sh` y deja vacía la pregunta del dominio. La app quedará en `http://IP_DEL_VPS`.
 
@@ -57,7 +58,7 @@ El script instala Docker si falta y crea el archivo `.env` con claves aleatorias
 |---|---|
 | Ver si todo está corriendo | `docker compose ps` |
 | Ver errores de la app | `docker compose logs -f app` |
-| Actualizar a la última versión del código | `bash deploy/vps/actualizar.sh` |
+| Actualizar a la última versión de `main` | `bash deploy/vps/desplegar.sh` (o automático desde GitHub, ver `docs/GITHUB_DESPLIEGUE_AUTOMATICO.md`) |
 | Respaldo inmediato | `bash deploy/vps/respaldar.sh` |
 | Restaurar un respaldo (borra los datos actuales) | `bash deploy/vps/restaurar.sh deploy/vps/backups/ARCHIVO.sql.gz` |
 | Reiniciar | `docker compose restart` |

@@ -25,7 +25,7 @@ export default function Order() {
   const [error, setError] = useState('');
   const [modal, setModal] = useState(null); // { type, ...data }
 
-  const backPath = order && order.channel !== 'salon' ? '/domicilios' : '/mesero/mesas';
+  const backPath = order && order.channel !== 'salon' ? '/app/domicilios' : '/app/mesero/mesas';
 
   function loadOrder() {
     return api.get(`/orders/${orderId}`).then(res => setOrder(res.data)).catch((err) => {
@@ -40,7 +40,7 @@ export default function Order() {
   useEffect(() => {
     if (!socket) return;
     const onOrderChanged = (data) => { if (data.id === orderId) setOrder(data); };
-    const onOrderClosed = (data) => { if (data.id === orderId && !modal) navigate(data.channel === 'salon' ? '/mesero/mesas' : '/domicilios'); };
+    const onOrderClosed = (data) => { if (data.id === orderId && !modal) navigate(data.channel === 'salon' ? '/app/mesero/mesas' : '/app/domicilios'); };
     socket.on('order:changed', onOrderChanged);
     socket.on('order:closed', onOrderClosed);
     socket.on('menu:changed', loadMenu);
@@ -164,8 +164,11 @@ export default function Order() {
                 </div>
                 {!item.available && <span className="badge red">Agotado</span>}
                 {item.available && (
-                  <button className="quick-add" title="Incluir 1 rápido"
-                    onClick={e => { e.stopPropagation(); addItem(item); }}>+1</button>
+                  <>
+                    <button type="button" className="btn" style={{ width: '100%', marginTop: 8 }}
+                      onClick={e => { e.stopPropagation(); addItem(item); }}>+ Agregar a la cuenta</button>
+                    <div className="item-hint">o toca la tarjeta para cantidad, notas y comensal</div>
+                  </>
                 )}
               </div>
             ))}
@@ -342,6 +345,7 @@ function Totals({ order }) {
       )}
       <div><span>Base {order.prices_include_tax ? '(sin impuesto)' : ''}</span><span>{money(order.net_subtotal)}</span></div>
       <div><span>{order.tax_name} {order.tax_rate}%{order.prices_include_tax ? ' incluido' : ''}</span><span>{money(order.tax_amount)}</span></div>
+      {order.service_charge > 0 && <div><span>Servicio {order.service_charge_rate}%</span><span>{money(order.service_charge)}</span></div>}
       {order.delivery_fee > 0 && <div><span>Domicilio</span><span>{money(order.delivery_fee)}</span></div>}
       <div className="grand"><span>Total</span><span>{money(order.total)}</span></div>
       {order.paid_amount > 0 && <>

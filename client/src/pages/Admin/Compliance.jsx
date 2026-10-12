@@ -60,7 +60,7 @@ export default function Compliance() {
           </tbody>
         </table>
         <p style={{ fontSize: 12, color: '#6b7280' }}>{data.disclaimer}</p>
-        <p style={{ fontSize: 13 }}><Link to="/legal/terminos">Términos y condiciones</Link> · <Link to="/legal/privacidad">Política de privacidad</Link></p>
+        <p style={{ fontSize: 13 }}><Link to="/terminos">Términos y condiciones</Link> · <Link to="/privacidad">Política de privacidad</Link></p>
       </div>
     </div>
   );

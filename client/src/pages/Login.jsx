@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
 
 export default function Login() {
-  const [mode, setMode] = useState('login');
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState(searchParams.get('registro') ? 'register' : 'login');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -29,7 +29,7 @@ export default function Login() {
     try {
       const { data } = await axios.post('/api/auth/login', loginForm);
       login(data.token, data.user, data.permissions);
-      navigate(data.password_expired ? '/mi-cuenta?expirada=1' : '/');
+      navigate(data.password_expired ? '/app/mi-cuenta?expirada=1' : '/app');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al iniciar sesión');
     } finally {
@@ -43,7 +43,7 @@ export default function Login() {
     try {
       const { data } = await axios.post('/api/auth/register-restaurant', regForm);
       login(data.token, data.user, data.permissions);
-      navigate('/');
+      navigate('/app');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al registrar');
     } finally {
@@ -54,6 +54,7 @@ export default function Login() {
   return (
     <div className="login-wrap">
       <div className="login-box">
+        <Link to="/" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none' }}>← Volver al inicio</Link>
         <h1>🍽️ Living POS</h1>
         <div className="tab-switch">
           <button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>Iniciar sesión</button>
@@ -121,7 +122,7 @@ export default function Login() {
               <input type="checkbox" required style={{ width: 'auto', marginTop: 2 }} checked={regForm.acceptTerms}
                 onChange={e => setRegForm({ ...regForm, acceptTerms: e.target.checked })} />
               <span>
-                Acepto los <Link to="/legal/terminos" target="_blank">términos</Link> y la <Link to="/legal/privacidad" target="_blank">política de privacidad</Link>,
+                Acepto los <Link to="/terminos" target="_blank">términos</Link> y la <Link to="/privacidad" target="_blank">política de privacidad</Link>,
                 y que mi negocio es responsable de cumplir la ley tributaria, laboral y de datos personales de su país.
                 {legal.disclaimer && <span style={{ display: 'block', color: '#6b7280', marginTop: 4 }}>{legal.disclaimer}</span>}
               </span>

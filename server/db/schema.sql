@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS restaurants (
   currency_symbol TEXT NOT NULL DEFAULT '$',
   tax_name TEXT NOT NULL DEFAULT 'IVA',    -- nombre del impuesto local
   tax_rate REAL NOT NULL DEFAULT 0,        -- porcentaje, ej 19 = 19%
+  service_charge_rate REAL NOT NULL DEFAULT 0, -- % de servicio opcional (ej. 10 en Colombia); 0 = desactivado, varía por país/negocio
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -294,8 +295,10 @@ CREATE TABLE IF NOT EXISTS platform_subscriptions (
   restaurant_id TEXT PRIMARY KEY REFERENCES restaurants(id),
   plan TEXT NOT NULL DEFAULT 'trial' CHECK (plan IN ('trial','starter','pro')),
   status TEXT NOT NULL DEFAULT 'trialing' CHECK (status IN ('trialing','active','past_due','canceled')),
+  provider TEXT NOT NULL DEFAULT 'stripe',   -- 'stripe' | 'wompi'
   stripe_customer_id TEXT,
   stripe_subscription_id TEXT,
+  external_reference TEXT,                   -- referencia de la transacción/checkout (Wompi)
   trial_ends_at TEXT,
   current_period_end TEXT,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))

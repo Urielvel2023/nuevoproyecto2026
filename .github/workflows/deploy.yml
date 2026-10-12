@@ -1,0 +1,59 @@
+# Despliegue automático al VPS (Hostinger u otro) cuando las pruebas de `main`
+# pasan, o a mano desde la pestaña Actions → "Desplegar al VPS" → Run workflow.
+#
+# Requiere estos secrets en GitHub (Settings → Secrets and variables → Actions):
+#   VPS_HOST     IP o dominio del VPS
+#   VPS_USER     usuario SSH (normalmente root)
+#   VPS_SSH_KEY  llave privada SSH autorizada en el VPS
+#   VPS_PORT     (opcional) puerto SSH, 22 por defecto
+#   VPS_PATH     (opcional) carpeta del proyecto, /opt/living-pos por defecto
+# Sin VPS_HOST configurado, el flujo se omite sin error.
+name: Desplegar al VPS
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: produccion
+    steps:
+      - name: Verificar configuración
+        id: check
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          if [ -z "$VPS_HOST" ]; then
+            echo "::notice::No hay secret VPS_HOST: se omite el despliegue. Ver docs/GITHUB_DESPLIEGUE_AUTOMATICO.md"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Desplegar por SSH
+        if: steps.check.outputs.skip != 'true'
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          VPS_PATH: ${{ secrets.VPS_PATH }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          envs: VPS_PATH
+          command_timeout: 25m
+          script: |
+            set -e
+            cd "${VPS_PATH:-/opt/living-pos}"
+            bash deploy/vps/desplegar.sh

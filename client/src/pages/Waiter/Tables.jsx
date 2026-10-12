@@ -76,12 +76,12 @@ export default function Tables() {
     setError('');
     if (t.status === 'unida') {
       const main = tables.find(x => x.id === t.merged_into);
-      if (main && main.open_order_id && !belongsToOther(main)) navigate(`/mesero/pedido/${main.open_order_id}`);
+      if (main && main.open_order_id && !belongsToOther(main)) navigate(`/app/mesero/pedido/${main.open_order_id}`);
       return;
     }
     if (t.open_order_id) {
       if (belongsToOther(t)) { setError(`La mesa ${t.name} la atiende ${t.order_waiter_name}`); return; }
-      navigate(`/mesero/pedido/${t.open_order_id}`);
+      navigate(`/app/mesero/pedido/${t.open_order_id}`);
       return;
     }
     setGuests(Math.min(t.capacity || 2, 2));
@@ -91,7 +91,7 @@ export default function Tables() {
   async function openTable() {
     await act(async () => {
       const { data } = await api.post('/orders', { table_id: selected.id, guests });
-      navigate(`/mesero/pedido/${data.id}`);
+      navigate(`/app/mesero/pedido/${data.id}`);
     });
   }
 

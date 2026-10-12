@@ -140,7 +140,31 @@ Si ya facturas por fuera del sistema (por ejemplo con el portal gratuito de la D
 
 ## Suscripción SaaS (cobrar a otros restaurantes)
 
-Cada restaurante que se registra recibe automáticamente 28 días de prueba (cámbialo con la variable `TRIAL_DAYS`). Para cobrar la suscripción:
+Cada restaurante que se registra recibe automáticamente 28 días de prueba (cámbialo con la variable `TRIAL_DAYS`). Para cobrar la suscripción hay dos pasarelas disponibles — puedes activar una o ambas:
+
+### Opción A — Wompi (recomendada para Colombia)
+
+Stripe no permite recibir pagos directamente como negocio colombiano; [Wompi](https://wompi.co) (de Bancolombia) sí.
+
+1. Crea una cuenta en [comercios.wompi.co](https://comercios.wompi.co) (puedes empezar en modo sandbox/pruebas mientras completas el registro del negocio con NIT/RUT).
+2. En **Configuración → Llaves de API**, copia la **Llave pública**, el **Secreto de integridad** y el **Secreto de eventos**.
+3. Configura estas variables de entorno en el servidor:
+
+```
+WOMPI_PUBLIC_KEY=pub_...
+WOMPI_INTEGRITY_SECRET=...
+WOMPI_EVENTS_SECRET=...
+APP_URL=https://tu-dominio.com
+# Opcional: precio mensual en pesos colombianos (por defecto Starter=49000, Pro=99000)
+WOMPI_PRICE_STARTER=49000
+WOMPI_PRICE_PRO=99000
+```
+
+4. En el panel de Wompi, configura la URL de eventos (webhook) apuntando a `https://tu-dominio.com/api/billing/wompi/webhook`.
+
+**Importante:** Wompi no ofrece cobro recurrente automático accesible a cualquier comercio — cada pago aprobado activa la suscripción por 30 días, y para el siguiente período el restaurante debe volver a la pestaña Suscripción y pagar de nuevo (el botón dice "Renovar con Wompi"). No es cobro automático mes a mes como Stripe.
+
+### Opción B — Stripe (para negocios que sí pueden recibir pagos internacionales)
 
 1. Crea una cuenta en [Stripe](https://stripe.com) y crea dos productos recurrentes (Starter y Pro, o los que definas).
 2. Configura estas variables de entorno en el servidor:
@@ -153,10 +177,13 @@ STRIPE_PRICE_ID_PRO=price_...
 APP_URL=https://tu-dominio.com
 ```
 
-3. En el panel de Stripe, configura un webhook apuntando a `https://tu-dominio.com/api/billing/webhook` escuchando los eventos `checkout.session.completed`, `customer.subscription.updated` y `customer.subscription.deleted`.
-4. (Opcional) Define `ENFORCE_BILLING=true` para que, una vez vencida la prueba, el sistema bloquee el uso (código 402) hasta que el restaurante pague. **Por defecto está apagado**, así que instalar esto no afecta a nadie hasta que decidas activarlo.
+3. En el panel de Stripe, configura un webhook apuntando a `https://tu-dominio.com/api/billing/webhook` escuchando los eventos `checkout.session.completed`, `customer.subscription.updated` y `customer.subscription.deleted`. Esta sí es una suscripción con cobro automático recurrente.
 
-Sin estas variables, el sistema funciona exactamente igual (la pestaña Suscripción solo indica que el cobro no está configurado todavía).
+### Enforcement (opcional, para ambas)
+
+Define `ENFORCE_BILLING=true` para que, una vez vencida la prueba, el sistema bloquee el uso (código 402) hasta que el restaurante pague. **Por defecto está apagado**, así que instalar esto no afecta a nadie hasta que decidas activarlo.
+
+Sin ninguna de estas variables, el sistema funciona exactamente igual (la pestaña Suscripción solo indica que el cobro no está configurado todavía).
 
 ## Próximos pasos sugeridos
 
@@ -173,12 +200,14 @@ Sin estas variables, el sistema funciona exactamente igual (la pestaña Suscripc
 Con Docker, HTTPS automático y respaldos diarios, en 3 comandos:
 
 ```bash
-git clone -b claude/living-restaurant-system-jxwjgr https://github.com/Urielvel2023/nuevoproyecto2026.git /opt/living-pos
+git clone https://github.com/Urielvel2023/nuevoproyecto2026.git /opt/living-pos
 cd /opt/living-pos
 DOMAIN=app.tudominio.com bash deploy/vps/instalar.sh
 ```
 
 Guía completa paso a paso (hPanel, DNS, actualizar, respaldar y restaurar): [`docs/DESPLIEGUE_VPS_HOSTINGER.md`](docs/DESPLIEGUE_VPS_HOSTINGER.md).
+
+**Despliegue automático desde GitHub:** cada cambio en `main` se prueba (GitHub Actions, SQLite y PostgreSQL) y, si pasa, se publica solo en el VPS. Configuración en [`docs/GITHUB_DESPLIEGUE_AUTOMATICO.md`](docs/GITHUB_DESPLIEGUE_AUTOMATICO.md).
 
 ---
 
@@ -190,7 +219,7 @@ El repositorio trae `render.yaml`, que crea la base de datos PostgreSQL y el ser
 
 1. Entra a [render.com](https://render.com) con tu cuenta (puedes usar "Sign up with GitHub").
 2. Clic en **New + → Blueprint**.
-3. Conecta el repositorio `nuevoproyecto2026` y elige la rama que quieres publicar (por ejemplo `main`, después de fusionar los cambios).
+3. Conecta el repositorio `nuevoproyecto2026` (el Blueprint publica la rama `main`).
 4. Render muestra la base `living-pos-db` y el servicio `living-pos`. Completa la variable `APP_URL` con la URL pública (puedes dejarla vacía en el primer despliegue y ponerla después, por ejemplo `https://living-pos.onrender.com`). Las variables de Stripe son opcionales.
 5. Clic en **Apply**. En unos 5 minutos el sistema queda en línea y crea las tablas solo.
 6. Abre la URL, pestaña **Registrar restaurante**: cada cliente se registra, elige su país y acepta los términos.

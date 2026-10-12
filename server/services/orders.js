@@ -22,7 +22,11 @@ function computeTotals(order, items, payments, restaurant) {
   const includesTax = !!(restaurant && Number(restaurant.prices_include_tax));
   const net = includesTax ? afterDiscount / (1 + rate) : afterDiscount;
   const tax = includesTax ? afterDiscount - net : net * rate;
-  const total = net + tax + (order.delivery_fee || 0);
+  // % de servicio opcional del restaurante (0 = desactivado). Se calcula sobre el
+  // consumo después de descuentos y va aparte del impuesto y de la propina voluntaria.
+  const serviceRate = (restaurant && restaurant.service_charge_rate) || 0;
+  const serviceCharge = round2(afterDiscount * serviceRate / 100);
+  const total = net + tax + serviceCharge + (order.delivery_fee || 0);
 
   const paid = payments.reduce((s, p) => s + p.amount, 0);
   const tips = payments.reduce((s, p) => s + (p.tip_amount || 0), 0);
@@ -36,6 +40,8 @@ function computeTotals(order, items, payments, restaurant) {
     tax_rate: restaurant ? restaurant.tax_rate : 0,
     tax_name: restaurant ? restaurant.tax_name : 'IVA',
     prices_include_tax: includesTax,
+    service_charge_rate: serviceRate,
+    service_charge: serviceCharge,
     total: round2(total),
     paid_amount: round2(paid),
     tip_amount: round2(tips),
@@ -49,7 +55,7 @@ async function getOrderFull(db, orderId, restaurantId) {
   if (!order) return null;
   const items = await db.all('SELECT * FROM order_items WHERE order_id = ? ORDER BY created_at', [orderId]);
   const payments = await db.all('SELECT * FROM order_payments WHERE order_id = ? ORDER BY created_at', [orderId]);
-  const restaurant = await db.get('SELECT tax_rate, tax_name, prices_include_tax, tip_suggested_pct FROM restaurants WHERE id = ?', [restaurantId]);
+  const restaurant = await db.get('SELECT tax_rate, tax_name, prices_include_tax, tip_suggested_pct, service_charge_rate FROM restaurants WHERE id = ?', [restaurantId]);
   const table = order.table_id ? await db.get('SELECT * FROM tables WHERE id = ?', [order.table_id]) : null;
   const merged = order.table_id
     ? await db.all('SELECT id, name FROM tables WHERE merged_into = ? ORDER BY name', [order.table_id]) : [];

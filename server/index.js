@@ -61,6 +61,7 @@ app.use('/api/accounting', moduleGuard('contabilidad'), require('./routes/accoun
 app.use('/api/payroll', moduleGuard('nomina'), require('./routes/payroll'));
 app.use('/api/delivery', moduleGuard('delivery'), require('./routes/delivery'));
 app.use('/api/billing', moduleGuard('suscripcion'), require('./routes/billing'));
+app.use('/api/settings', moduleGuard('configuracion'), require('./routes/settings'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, db: db.kind }));
 
