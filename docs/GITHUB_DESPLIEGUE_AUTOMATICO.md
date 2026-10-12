@@ -1,4 +1,4 @@
-# GitHub: pruebas y despliegue automático al VPS
+# GitHub: pruebas y despliegue automático (VPS o Render)
 
 Con esta configuración, cada cambio que llega a la rama `main` sigue este camino:
 
@@ -45,6 +45,24 @@ En GitHub: **Actions → Desplegar al VPS → Run workflow → Run workflow**. E
 
 Desde ese momento, cada vez que fusiones algo en `main`, se prueba y se publica solo.
 
+## Alternativa: desplegar en Render por su API
+
+Si usas Render en lugar del VPS (o además del VPS), el flujo **Desplegar en Render** hace lo mismo con la API de Render (`api.render.com`). Cuando las pruebas de `main` pasan, le pide a Render que publique **ese mismo commit probado**, espera a que quede en línea y falla en rojo si el despliegue falla.
+
+1. Crea el servicio una vez con el Blueprint: en Render, **New + → Blueprint** → este repositorio. `render.yaml` ya trae `autoDeploy: false`, así que Render no publica nada que no haya pasado las pruebas.
+2. En Render, ve a **Account Settings → API Keys → Create API Key**, ponle un nombre (por ejemplo `github-actions`) y cópiala.
+3. Abre el servicio `living-pos` en Render. Su ID es la parte de la URL que empieza por `srv-` (por ejemplo `srv-abc123...`).
+4. En GitHub, en **Settings → Secrets and variables → Actions**, crea:
+
+| Nombre | Valor |
+|---|---|
+| `RENDER_API_KEY` | La API key del paso 2 |
+| `RENDER_SERVICE_ID` | El ID `srv-...` del paso 3 |
+
+5. Prueba el despliegue en **Actions → Desplegar en Render → Run workflow**.
+
+Si solo vas a usar Render, no crees los secrets `VPS_*`: ese flujo se omite solo, y lo mismo pasa al revés. La API key de Render da control sobre tu cuenta: guárdala solo en el secret de GitHub y, si se filtra, revócala en Render.
+
 ## Recomendado
 - **Aprobación manual antes de publicar.** En **Settings → Environments → produccion**, activa *Required reviewers* y ponte a ti mismo. GitHub esperará tu clic antes de cada despliegue.
 - **Proteger `main`.** En **Settings → Branches → Add branch ruleset** (o *Add rule*) para `main`, activa *Require a pull request before merging* y *Require status checks to pass*, y selecciona las pruebas `Pruebas (sqlite)`, `Pruebas (postgres)` e `Imagen Docker`. Así nada sin probar llega a producción.
@@ -66,6 +84,9 @@ Desde ese momento, cada vez que fusiones algo en `main`, se prueba y se publica 
 |---|---|
 | `CI` en rojo | Abre el flujo y luego el paso en rojo; el registro del servidor aparece al final. No se desplegó nada. |
 | `Desplegar al VPS` dice "se omite el despliegue" | Falta el secret `VPS_HOST` (paso 4). |
+| `Desplegar en Render` dice `Render respondió 401` | La `RENDER_API_KEY` es incorrecta o fue revocada; crea otra. |
+| `Desplegar en Render` dice `Render respondió 404` | El `RENDER_SERVICE_ID` no es el del servicio web (debe empezar por `srv-`). |
+| `Desplegar en Render` dice `build_failed` | Abre el servicio en Render → **Logs** para ver el error de compilación. |
 | `ssh: handshake failed` o `unable to authenticate` | La llave en `VPS_SSH_KEY` está incompleta, o la pública no está en `~/.ssh/authorized_keys` del VPS. Repite el paso 3. |
 | `No existe .env` | La app no está instalada en el VPS: corre `deploy/vps/instalar.sh` (paso 2). |
 | `La app no respondió después del despliegue` | En el VPS: `cd /opt/living-pos && docker compose logs app`. Si necesitas volver atrás, restaura el respaldo que el despliegue creó justo antes (`bash deploy/vps/restaurar.sh deploy/vps/backups/living-pos-manual-...`). |

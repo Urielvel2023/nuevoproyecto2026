@@ -18,7 +18,9 @@ services:
     buildCommand: npm install --prefix client --include=dev && npm run build --prefix client && npm install --prefix server --omit=dev
     startCommand: npm start --prefix server
     healthCheckPath: /api/health
-    autoDeploy: true
+    # Render no despliega solo al recibir un push: lo hace GitHub Actions por la API
+    # después de que pasan las pruebas (.github/workflows/deploy-render.yml).
+    autoDeploy: false
     envVars:
       - key: NODE_ENV
         value: production

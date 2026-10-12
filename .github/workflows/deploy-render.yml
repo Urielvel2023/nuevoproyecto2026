@@ -1,0 +1,83 @@
+# Despliegue a Render usando su API (api.render.com) cuando las pruebas de
+# `main` pasan, o a mano desde Actions → "Desplegar en Render" → Run workflow.
+#
+# Requiere estos secrets en GitHub (Settings → Secrets and variables → Actions):
+#   RENDER_API_KEY     API key de Render (Account Settings → API Keys)
+#   RENDER_SERVICE_ID  ID del servicio web, empieza por "srv-" (está en la URL
+#                      del servicio en el panel de Render)
+# Sin RENDER_API_KEY configurado, el flujo se omite sin error.
+name: Desplegar en Render
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-render
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: produccion
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+      # Commit probado por CI (o el último de la rama si se lanza a mano)
+      COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - name: Verificar configuración
+        id: check
+        run: |
+          if [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_SERVICE_ID" ]; then
+            echo "::notice::Faltan los secrets RENDER_API_KEY o RENDER_SERVICE_ID: se omite el despliegue en Render."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pedir el despliegue a Render
+        id: deploy
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          body=$(jq -n --arg c "$COMMIT" '{clearCache: "do_not_clear", commitId: $c}')
+          resp=$(curl -sS -w '\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Accept: application/json" -H "Content-Type: application/json" \
+            -d "$body" "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys")
+          code=$(echo "$resp" | tail -n1); json=$(echo "$resp" | sed '$d')
+          if [ "$code" -ge 300 ]; then
+            echo "::error::Render respondió $code: $json"
+            exit 1
+          fi
+          id=$(echo "$json" | jq -r '.id')
+          echo "Despliegue creado: $id (commit $COMMIT)"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+      - name: Esperar a que quede en línea
+        if: steps.check.outputs.skip != 'true'
+        env:
+          DEPLOY_ID: ${{ steps.deploy.outputs.id }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 100); do
+            status=$(curl -sS -H "Authorization: Bearer $RENDER_API_KEY" -H "Accept: application/json" \
+              "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys/$DEPLOY_ID" | jq -r '.status')
+            echo "Estado: $status"
+            case "$status" in
+              live) echo "Desplegado en Render."; exit 0 ;;
+              build_failed|update_failed|pre_deploy_failed|canceled|deactivated)
+                echo "::error::El despliegue terminó con estado $status. Revisa los logs del servicio en el panel de Render."
+                exit 1 ;;
+            esac
+            sleep 15
+          done
+          echo "::error::El despliegue no terminó en 25 minutos."
+          exit 1
