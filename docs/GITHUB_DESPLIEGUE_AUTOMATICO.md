@@ -51,7 +51,7 @@ Si usas Render en lugar del VPS (o además del VPS), el flujo **Desplegar en Ren
 
 1. Crea el servicio una vez con el Blueprint: en Render, **New + → Blueprint** → este repositorio. `render.yaml` ya trae `autoDeploy: false`, así que Render no publica nada que no haya pasado las pruebas.
 2. En Render, ve a **Account Settings → API Keys → Create API Key**, ponle un nombre (por ejemplo `github-actions`) y cópiala.
-3. Abre el servicio `living-pos` en Render. Su ID es la parte de la URL que empieza por `srv-` (por ejemplo `srv-abc123...`).
+3. Abre el servicio `costos-para-restaurantes` en Render. Su ID es la parte de la URL que empieza por `srv-` (por ejemplo `srv-abc123...`).
 4. En GitHub, en **Settings → Secrets and variables → Actions**, crea:
 
 | Nombre | Valor |

@@ -2,15 +2,15 @@
 # (backend + frontend compilado) en un solo paso.
 # En Render: New + → Blueprint → elige este repositorio y la rama a desplegar.
 databases:
-  - name: living-pos-db
-    databaseName: living_pos
-    user: living_pos
+  - name: costos-para-restaurantes-db
+    databaseName: costos_restaurantes
+    user: costos_restaurantes
     # Plan pagado: el plan gratuito de Postgres expira y no sirve para clientes reales.
     plan: basic-256mb
 
 services:
   - type: web
-    name: living-pos
+    name: costos-para-restaurantes
     runtime: node
     branch: main
     # "starter" no se duerme por inactividad (el plan free sí, y tarda ~1 min en despertar).
@@ -30,7 +30,7 @@ services:
         generateValue: true
       - key: DATABASE_URL
         fromDatabase:
-          name: living-pos-db
+          name: costos-para-restaurantes-db
           property: connectionString
       # URL pública del servicio (ej. https://living-pos.onrender.com o tu dominio).
       # Se usa para CORS y para los retornos de pago de Stripe.

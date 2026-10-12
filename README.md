@@ -220,7 +220,7 @@ El repositorio trae `render.yaml`, que crea la base de datos PostgreSQL y el ser
 1. Entra a [render.com](https://render.com) con tu cuenta (puedes usar "Sign up with GitHub").
 2. Clic en **New + → Blueprint**.
 3. Conecta el repositorio `nuevoproyecto2026` (el Blueprint publica la rama `main`).
-4. Render muestra la base `living-pos-db` y el servicio `living-pos`. Completa la variable `APP_URL` con la URL pública (puedes dejarla vacía en el primer despliegue y ponerla después, por ejemplo `https://living-pos.onrender.com`). Las variables de Stripe son opcionales.
+4. Render muestra la base `costos-para-restaurantes-db` y el servicio `costos-para-restaurantes`. Completa la variable `APP_URL` con la URL pública (puedes dejarla vacía en el primer despliegue y ponerla después, por ejemplo `https://costos-para-restaurantes.onrender.com`). Las variables de Stripe son opcionales.
 5. Clic en **Apply**. Después, para que cada cambio probado en `main` se publique solo, configura los secrets `RENDER_API_KEY` y `RENDER_SERVICE_ID` en GitHub (ver [`docs/GITHUB_DESPLIEGUE_AUTOMATICO.md`](docs/GITHUB_DESPLIEGUE_AUTOMATICO.md)). El Blueprint trae `autoDeploy: false` para que Render no publique nada sin pruebas.
 6. Primer despliegue: en unos 5 minutos el sistema queda en línea y crea las tablas solo.
 7. Abre la URL, pestaña **Registrar restaurante**: cada cliente se registra, elige su país y acepta los términos.
