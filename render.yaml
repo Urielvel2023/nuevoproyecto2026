@@ -5,22 +5,26 @@ databases:
   - name: costos-para-restaurantes-db
     databaseName: costos_restaurantes
     user: costos_restaurantes
-    # Plan pagado: el plan gratuito de Postgres expira y no sirve para clientes reales.
-    plan: basic-256mb
+    # Plan gratuito para empezar sin costo. Render permite UNA base gratis por cuenta
+    # y la hace expirar después de un tiempo: antes de tener clientes reales,
+    # cambia a un plan pagado (ej. basic-256mb) para no perder datos.
+    plan: free
 
 services:
   - type: web
     name: costos-para-restaurantes
     runtime: node
     branch: main
-    # "starter" no se duerme por inactividad (el plan free sí, y tarda ~1 min en despertar).
-    plan: starter
+    # Plan gratuito: se "duerme" tras ~15 min sin uso y tarda ~1 min en despertar.
+    # Para clientes reales usa "starter" (siempre encendido).
+    plan: free
     buildCommand: npm install --prefix client --include=dev && npm run build --prefix client && npm install --prefix server --omit=dev
     startCommand: npm start --prefix server
     healthCheckPath: /api/health
-    # Render no despliega solo al recibir un push: lo hace GitHub Actions por la API
-    # después de que pasan las pruebas (.github/workflows/deploy-render.yml).
-    autoDeploy: false
+    # Render publica cada cambio que llega a main. Si configuras el despliegue por
+    # la API desde GitHub (.github/workflows/deploy-render.yml), pon esto en false
+    # para que solo se publique lo que pasó las pruebas.
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
@@ -32,7 +36,7 @@ services:
         fromDatabase:
           name: costos-para-restaurantes-db
           property: connectionString
-      # URL pública del servicio (ej. https://living-pos.onrender.com o tu dominio).
+      # URL pública del servicio (ej. https://costos-para-restaurantes.onrender.com o tu dominio).
       # Se usa para CORS y para los retornos de pago de Stripe.
       - key: APP_URL
         sync: false

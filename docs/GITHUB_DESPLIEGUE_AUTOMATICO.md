@@ -49,7 +49,7 @@ Desde ese momento, cada vez que fusiones algo en `main`, se prueba y se publica 
 
 Si usas Render en lugar del VPS (o además del VPS), el flujo **Desplegar en Render** hace lo mismo con la API de Render (`api.render.com`). Cuando las pruebas de `main` pasan, le pide a Render que publique **ese mismo commit probado**, espera a que quede en línea y falla en rojo si el despliegue falla.
 
-1. Crea el servicio una vez con el Blueprint: en Render, **New + → Blueprint** → este repositorio. `render.yaml` ya trae `autoDeploy: false`, así que Render no publica nada que no haya pasado las pruebas.
+1. Crea el servicio una vez con el Blueprint: en Render, **New + → Blueprint** → este repositorio. Luego cambia `autoDeploy` a `false` en `render.yaml`, para que Render no publique nada que no haya pasado las pruebas: de eso se encarga este flujo.
 2. En Render, ve a **Account Settings → API Keys → Create API Key**, ponle un nombre (por ejemplo `github-actions`) y cópiala.
 3. Abre el servicio `costos-para-restaurantes` en Render. Su ID es la parte de la URL que empieza por `srv-` (por ejemplo `srv-abc123...`).
 4. En GitHub, en **Settings → Secrets and variables → Actions**, crea:
