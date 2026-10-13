@@ -215,17 +215,16 @@ Guía completa paso a paso (hPanel, DNS, actualizar, respaldar y restaurar): [`d
 
 ### Opción rápida (recomendada): Blueprint en un clic
 
-El repositorio trae `render.yaml`, que crea la base de datos PostgreSQL y el servicio web con todo configurado (incluida una `JWT_SECRET` aleatoria).
+El repositorio trae `render.yaml`, que crea el servicio web con todo configurado (incluida una `JWT_SECRET` aleatoria).
 
 1. Entra a [render.com](https://render.com) con tu cuenta (puedes usar "Sign up with GitHub").
 2. Clic en **New + → Blueprint**.
-3. Conecta el repositorio `nuevoproyecto2026` (el Blueprint publica la rama `main`).
-4. Render muestra la base `costos-para-restaurantes-db` y el servicio `costos-para-restaurantes`. Completa la variable `APP_URL` con la URL pública (puedes dejarla vacía en el primer despliegue y ponerla después, por ejemplo `https://costos-para-restaurantes.onrender.com`). Las variables de Stripe son opcionales.
-5. Clic en **Apply**. Después, para que cada cambio probado en `main` se publique solo, configura los secrets `RENDER_API_KEY` y `RENDER_SERVICE_ID` en GitHub (ver [`docs/GITHUB_DESPLIEGUE_AUTOMATICO.md`](docs/GITHUB_DESPLIEGUE_AUTOMATICO.md)). Si lo haces, cambia `autoDeploy` a `false` en `render.yaml` para que Render no publique nada sin pruebas.
-6. Primer despliegue: en unos 5 minutos el sistema queda en línea y crea las tablas solo.
-7. Abre la URL, pestaña **Registrar restaurante**: cada cliente se registra, elige su país y acepta los términos.
+3. Conecta el repositorio `nuevoproyecto2026` y elige la rama a publicar.
+4. Render muestra el servicio `costos-para-restaurantes` en plan **gratis**.
+5. Clic en **Apply**. En unos 5 minutos queda en línea.
+6. Abre la URL (algo como `https://costos-para-restaurantes.onrender.com`), pestaña **Registrar restaurante**.
 
-Planes que usa el Blueprint: **gratuitos** (`free`), para empezar sin costo. El servicio gratis se duerme tras unos minutos sin uso y tarda cerca de un minuto en despertar; la base de datos gratis expira después de un tiempo y Render solo permite una por cuenta. Antes de tener clientes reales, cambia en `render.yaml` el servicio a `starter` y la base a `basic-256mb` (planes pagados).
+**Esta configuración es una versión de prueba gratuita:** no crea base de datos en Render (usa SQLite dentro del servicio), así que no ocupa la única base gratis de la cuenta ni toca otros proyectos. En el plan gratis los datos se borran cuando el servicio se "duerme" (unos 15 minutos sin uso) o se vuelve a publicar. Para clientes reales, agrega una base PostgreSQL (variable `DATABASE_URL`) y usa planes pagados, o instala en un VPS (ver arriba).
 
 Seguridad en producción: el servidor no arranca sin una `JWT_SECRET` de al menos 32 caracteres, envía cabeceras de seguridad (HSTS, anti-iframe) y limita los intentos de inicio de sesión por IP, además del bloqueo por usuario.
 

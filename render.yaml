@@ -1,29 +1,22 @@
-# Blueprint de Render: crea la base de datos PostgreSQL y el servicio web
-# (backend + frontend compilado) en un solo paso.
-# En Render: New + → Blueprint → elige este repositorio y la rama a desplegar.
-databases:
-  - name: costos-para-restaurantes-db
-    databaseName: costos_restaurantes
-    user: costos_restaurantes
-    # Plan gratuito para empezar sin costo. Render permite UNA base gratis por cuenta
-    # y la hace expirar después de un tiempo: antes de tener clientes reales,
-    # cambia a un plan pagado (ej. basic-256mb) para no perder datos.
-    plan: free
-
+# Blueprint de Render — VERSIÓN DE PRUEBA GRATUITA
+# Crea solo el servicio web en plan gratis, sin base de datos de Render: la app
+# guarda los datos en SQLite dentro del propio servicio. Así no usa la única
+# base de datos gratuita de la cuenta ni toca otros proyectos.
+#
+# Importante: en el plan gratis el disco se reinicia cuando el servicio se
+# "duerme" (unos 15 min sin uso) o se vuelve a publicar, y los datos de prueba
+# se pierden. Sirve para ver y mostrar la app, no para clientes reales.
+# Para producción: agrega una base PostgreSQL (DATABASE_URL) y usa planes pagados.
+#
+# En Render: New Blueprint Instance → este repositorio → elige la rama a publicar.
 services:
   - type: web
     name: costos-para-restaurantes
     runtime: node
-    branch: main
-    # Plan gratuito: se "duerme" tras ~15 min sin uso y tarda ~1 min en despertar.
-    # Para clientes reales usa "starter" (siempre encendido).
     plan: free
     buildCommand: npm install --prefix client --include=dev && npm run build --prefix client && npm install --prefix server --omit=dev
     startCommand: npm start --prefix server
     healthCheckPath: /api/health
-    # Render publica cada cambio que llega a main. Si configuras el despliegue por
-    # la API desde GitHub (.github/workflows/deploy-render.yml), pon esto en false
-    # para que solo se publique lo que pasó las pruebas.
     autoDeploy: true
     envVars:
       - key: NODE_ENV
@@ -32,24 +25,6 @@ services:
         value: 22
       - key: JWT_SECRET
         generateValue: true
-      - key: DATABASE_URL
-        fromDatabase:
-          name: costos-para-restaurantes-db
-          property: connectionString
-      # URL pública del servicio (ej. https://costos-para-restaurantes.onrender.com o tu dominio).
-      # Se usa para CORS y para los retornos de pago de Stripe.
-      - key: APP_URL
-        sync: false
-      # Cobro de suscripciones (opcional; sin estas variables la prueba gratuita sigue funcionando)
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
-      - key: STRIPE_PRICE_ID_STARTER
-        sync: false
-      - key: STRIPE_PRICE_ID_PRO
-        sync: false
-      # Días de prueba gratuita para cada restaurante nuevo
       - key: TRIAL_DAYS
         value: "28"
       - key: ENFORCE_BILLING
