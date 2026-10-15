@@ -63,7 +63,8 @@ app.use('/api/delivery', moduleGuard('delivery'), require('./routes/delivery'));
 app.use('/api/billing', moduleGuard('suscripcion'), require('./routes/billing'));
 app.use('/api/settings', moduleGuard('configuracion'), require('./routes/settings'));
 
-app.get('/api/health', (req, res) => res.json({ ok: true, db: db.kind }));
+// Público: la pantalla de registro muestra cuántos días dura el demo
+app.get('/api/health', (req, res) => res.json({ ok: true, db: db.kind, trial_days: require('./services/billing').TRIAL_DAYS }));
 
 // Servir el frontend (React) compilado, para que backend + frontend
 // sean un solo servicio desplegable (una sola URL, sin instalación local)

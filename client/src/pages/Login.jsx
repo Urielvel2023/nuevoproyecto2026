@@ -22,6 +22,10 @@ export default function Login() {
     axios.get('/api/compliance/countries').then(r => setLegal(r.data)).catch(() => {});
   }, []);
   const profile = legal.countries.find(c => c.code === regForm.country);
+  const [trialDays, setTrialDays] = useState(30);
+  useEffect(() => {
+    axios.get('/api/health').then(r => r.data.trial_days && setTrialDays(r.data.trial_days)).catch(() => {});
+  }, []);
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -59,6 +63,10 @@ export default function Login() {
         <div className="tab-switch">
           <button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>Iniciar sesión</button>
           <button className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>Registrar restaurante</button>
+        </div>
+
+        <div className="demo-notice">
+          🎁 <strong>Demo gratis por {trialDays} días.</strong> Sin tarjeta: registra tu restaurante y pruébalo completo.
         </div>
 
         {error && <div className="error-msg">{error}</div>}
