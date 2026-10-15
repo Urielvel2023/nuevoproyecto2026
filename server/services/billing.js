@@ -10,6 +10,13 @@
 // sigue funcionando normalmente: solo no se puede cobrar todavía.
 const db = require('../db');
 
+// Días de prueba gratuita para cada restaurante nuevo (configurable con TRIAL_DAYS)
+const TRIAL_DAYS = Math.max(1, parseInt(process.env.TRIAL_DAYS, 10) || 30);
+
+function trialEndDate() {
+  return new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
+
 const PLANS = {
   starter: {
     name: 'Starter',
@@ -45,7 +52,7 @@ function mapStripeStatus(stripeStatus) {
 async function getOrCreateSubscription(restaurantId) {
   let sub = await db.get('SELECT * FROM platform_subscriptions WHERE restaurant_id = ?', [restaurantId]);
   if (!sub) {
-    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    const trialEndsAt = trialEndDate();
     await db.run(`
       INSERT INTO platform_subscriptions (restaurant_id, plan, status, trial_ends_at)
       VALUES (?, 'trial', 'trialing', ?)
@@ -76,4 +83,18 @@ async function requireActiveSubscription(req, res, next) {
   }
 }
 
-module.exports = { PLANS, getStripe, mapStripeStatus, getOrCreateSubscription, requireActiveSubscription };
+// Estado de la prueba para mostrarlo en la app (días restantes, si ya venció y
+// si el bloqueo al vencer está activo).
+async function trialInfo(restaurantId) {
+  const sub = await getOrCreateSubscription(restaurantId);
+  const enforced = process.env.ENFORCE_BILLING === 'true';
+  if (sub.status === 'active') return { status: 'active', enforced };
+  const ends = sub.trial_ends_at ? new Date(sub.trial_ends_at) : null;
+  const daysLeft = ends ? Math.max(0, Math.ceil((ends - new Date()) / 86400000)) : null;
+  return {
+    status: sub.status, trial_days: TRIAL_DAYS, trial_ends_at: sub.trial_ends_at,
+    days_left: daysLeft, expired: !!(ends && ends <= new Date()), enforced
+  };
+}
+
+module.exports = { TRIAL_DAYS, trialEndDate, trialInfo, PLANS, getStripe, mapStripeStatus, getOrCreateSubscription, requireActiveSubscription };

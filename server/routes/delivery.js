@@ -1,6 +1,6 @@
 const express = require('express');
 const db = require('../db');
-const { authMiddleware, requireRole } = require('../auth');
+const { authMiddleware, requireModule, requirePermission } = require('../auth');
 const ah = require('../utils/asyncHandler');
 const { getOrderFull, createOrder, insertOrderItem, insertExternalOrderItem } = require('../services/orders');
 const { webhookToken } = require('../services/delivery');
@@ -107,7 +107,7 @@ router.post('/webhook/:restaurantId/:token', ah(async (req, res) => {
 router.use(authMiddleware);
 router.use(requireActiveSubscription);
 
-router.get('/webhook-url', requireRole('admin'), (req, res) => {
+router.get('/webhook-url', requirePermission('configuracion', 'editar'), (req, res) => {
   const token = webhookToken(req.user.restaurant_id);
   res.json({
     url: `/api/delivery/webhook/${req.user.restaurant_id}/${token}`,
@@ -116,7 +116,7 @@ router.get('/webhook-url', requireRole('admin'), (req, res) => {
 });
 
 // Pedidos de domicilio/recoger activos (no cerrados aún)
-router.get('/', requireRole('mesero', 'admin'), ah(async (req, res) => {
+router.get('/', requireModule(), ah(async (req, res) => {
   const orders = await db.all(`
     SELECT * FROM orders
     WHERE restaurant_id = ? AND channel != 'salon' AND status = 'abierta'
@@ -127,7 +127,7 @@ router.get('/', requireRole('mesero', 'admin'), ah(async (req, res) => {
 }));
 
 // Crear un pedido de domicilio/recoger manualmente (ej. pedido telefónico)
-router.post('/', requireRole('mesero', 'admin'), ah(async (req, res) => {
+router.post('/', requireModule(), ah(async (req, res) => {
   const { channel, customer_name, customer_phone, delivery_address, delivery_platform, delivery_fee } = req.body;
   if (!['domicilio', 'recoger'].includes(channel)) return res.status(400).json({ error: 'Canal inválido' });
 
@@ -143,7 +143,7 @@ router.post('/', requireRole('mesero', 'admin'), ah(async (req, res) => {
 }));
 
 // Cambiar el estado de entrega (recibido -> preparando -> en_camino -> entregado, o cancelado)
-router.put('/:id/status', requireRole('mesero', 'admin'), ah(async (req, res) => {
+router.put('/:id/status', requireModule(), ah(async (req, res) => {
   const { delivery_status } = req.body;
   if (!DELIVERY_STATUSES.includes(delivery_status)) return res.status(400).json({ error: 'Estado inválido' });
 

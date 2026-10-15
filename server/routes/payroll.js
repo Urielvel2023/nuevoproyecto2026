@@ -1,7 +1,7 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
-const { authMiddleware, requireRole } = require('../auth');
+const { authMiddleware, requireModule, requirePermission } = require('../auth');
 const { requireActiveSubscription } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
 
@@ -10,7 +10,7 @@ router.use(authMiddleware);
 router.use(requireActiveSubscription);
 
 // ---- Perfiles de empleado (datos de nómina) ----
-router.get('/employees', requireRole('admin'), ah(async (req, res) => {
+router.get('/employees', requireModule(), ah(async (req, res) => {
   const rows = await db.all(`
     SELECT u.id as user_id, u.name, u.email, u.role,
            ep.position, ep.salary_type, ep.base_salary, ep.hire_date, ep.active
@@ -22,7 +22,7 @@ router.get('/employees', requireRole('admin'), ah(async (req, res) => {
   res.json(rows);
 }));
 
-router.put('/employees/:userId', requireRole('admin'), ah(async (req, res) => {
+router.put('/employees/:userId', requireModule(), ah(async (req, res) => {
   const user = await db.get('SELECT * FROM users WHERE id = ? AND restaurant_id = ?',
     [req.params.userId, req.user.restaurant_id]);
   if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -75,7 +75,7 @@ router.post('/attendance/clock-out', ah(async (req, res) => {
   res.json(await db.get('SELECT * FROM attendance_records WHERE id = ?', [open.id]));
 }));
 
-router.get('/attendance', requireRole('admin'), ah(async (req, res) => {
+router.get('/attendance', requireModule(), ah(async (req, res) => {
   const { from, to, user_id } = req.query;
   let sql = `
     SELECT ar.*, u.name as user_name FROM attendance_records ar
@@ -91,12 +91,12 @@ router.get('/attendance', requireRole('admin'), ah(async (req, res) => {
 }));
 
 // ---- Períodos de nómina ----
-router.get('/periods', requireRole('admin'), ah(async (req, res) => {
+router.get('/periods', requireModule(), ah(async (req, res) => {
   res.json(await db.all('SELECT * FROM payroll_periods WHERE restaurant_id = ? ORDER BY period_start DESC',
     [req.user.restaurant_id]));
 }));
 
-router.post('/periods', requireRole('admin'), ah(async (req, res) => {
+router.post('/periods', requireModule(), ah(async (req, res) => {
   const { period_start, period_end } = req.body;
   if (!period_start || !period_end) return res.status(400).json({ error: 'Debes indicar el rango del período' });
   const id = uuidv4();
@@ -105,7 +105,7 @@ router.post('/periods', requireRole('admin'), ah(async (req, res) => {
   res.json(await db.get('SELECT * FROM payroll_periods WHERE id = ?', [id]));
 }));
 
-router.get('/periods/:id', requireRole('admin'), ah(async (req, res) => {
+router.get('/periods/:id', requireModule(), ah(async (req, res) => {
   const period = await db.get('SELECT * FROM payroll_periods WHERE id = ? AND restaurant_id = ?',
     [req.params.id, req.user.restaurant_id]);
   if (!period) return res.status(404).json({ error: 'No encontrado' });
@@ -121,7 +121,7 @@ router.get('/periods/:id', requireRole('admin'), ah(async (req, res) => {
 // empleado activos y las horas registradas en asistencia. Deducciones por
 // defecto tipo Colombia (salud 4% + pensión 4% a cargo del empleado),
 // ajustables al momento de generar.
-router.post('/periods/:id/generate', requireRole('admin'), ah(async (req, res) => {
+router.post('/periods/:id/generate', requireModule(), ah(async (req, res) => {
   const period = await db.get('SELECT * FROM payroll_periods WHERE id = ? AND restaurant_id = ?',
     [req.params.id, req.user.restaurant_id]);
   if (!period) return res.status(404).json({ error: 'No encontrado' });
@@ -176,7 +176,7 @@ router.post('/periods/:id/generate', requireRole('admin'), ah(async (req, res) =
   res.json({ ...period, items });
 }));
 
-router.put('/periods/:id/status', requireRole('admin'), ah(async (req, res) => {
+router.put('/periods/:id/status', requirePermission('nomina', 'aprobar'), ah(async (req, res) => {
   const { status } = req.body;
   if (!['abierto', 'pagado'].includes(status)) return res.status(400).json({ error: 'Estado inválido' });
   await db.run('UPDATE payroll_periods SET status = ? WHERE id = ? AND restaurant_id = ?',

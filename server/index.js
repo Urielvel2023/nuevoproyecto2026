@@ -5,18 +5,24 @@ const fs = require('fs');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
-const { JWT_SECRET } = require('./auth');
+const { JWT_SECRET, moduleGuard } = require('./auth');
 const db = require('./db');
+const { securityHeaders, rateLimit } = require('./security');
 
 const app = express();
-app.use(cors());
+// Render (y la mayoría de hostings) ponen un proxy delante: así req.ip es la IP real del cliente
+app.set('trust proxy', 1);
+app.use(securityHeaders);
+// El frontend se sirve desde el mismo dominio; si APP_URL está definida, solo ese origen puede llamar a la API
+const allowedOrigin = process.env.APP_URL || '*';
+app.use(cors({ origin: allowedOrigin }));
 // El webhook de Stripe necesita el body crudo (raw) para verificar la firma,
 // así que se monta antes que express.json() (ver routes/billing.js).
 app.use('/api/billing/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, { cors: { origin: allowedOrigin } });
 app.set('io', io);
 
 // Autenticación de sockets: cada cliente se une a la "sala" de su restaurante (tenant)
@@ -38,20 +44,27 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {});
 });
 
+// moduleGuard asocia cada router a un módulo de la matriz de accesos
+// (permissions.js), para que cada departamento entre solo a lo suyo.
+// Límite de intentos contra fuerza bruta en login y registro (además del bloqueo por usuario)
+app.use(['/api/auth/login', '/api/auth/register-restaurant'],
+  rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: 'Demasiados intentos desde esta conexión. Espera 15 minutos.' }));
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/inventory', require('./routes/inventory'));
-app.use('/api/recipes', require('./routes/recipes'));
-app.use('/api/menu', require('./routes/menu'));
-app.use('/api/orders', require('./routes/orders'));
-app.use('/api/reports', require('./routes/reports'));
-app.use('/api/invoicing', require('./routes/invoicing'));
-app.use('/api/accounting', require('./routes/accounting'));
-app.use('/api/payroll', require('./routes/payroll'));
-app.use('/api/delivery', require('./routes/delivery'));
-app.use('/api/billing', require('./routes/billing'));
-app.use('/api/settings', require('./routes/settings'));
+app.use('/api/compliance', require('./routes/compliance'));
+app.use('/api/inventory', moduleGuard('inventario'), require('./routes/inventory'));
+app.use('/api/recipes', moduleGuard('recetas'), require('./routes/recipes'));
+app.use('/api/menu', moduleGuard('menu'), require('./routes/menu'));
+app.use('/api/orders', moduleGuard('pedidos'), require('./routes/orders'));
+app.use('/api/reports', moduleGuard('reportes'), require('./routes/reports'));
+app.use('/api/invoicing', moduleGuard('facturacion'), require('./routes/invoicing'));
+app.use('/api/accounting', moduleGuard('contabilidad'), require('./routes/accounting'));
+app.use('/api/payroll', moduleGuard('nomina'), require('./routes/payroll'));
+app.use('/api/delivery', moduleGuard('delivery'), require('./routes/delivery'));
+app.use('/api/billing', moduleGuard('suscripcion'), require('./routes/billing'));
+app.use('/api/settings', moduleGuard('configuracion'), require('./routes/settings'));
 
-app.get('/api/health', (req, res) => res.json({ ok: true, db: db.kind }));
+// Público: la pantalla de registro muestra cuántos días dura el demo
+app.get('/api/health', (req, res) => res.json({ ok: true, db: db.kind, trial_days: require('./services/billing').TRIAL_DAYS }));
 
 // Servir el frontend (React) compilado, para que backend + frontend
 // sean un solo servicio desplegable (una sola URL, sin instalación local)

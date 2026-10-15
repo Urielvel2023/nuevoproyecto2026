@@ -1,6 +1,6 @@
 const express = require('express');
 const db = require('../db');
-const { authMiddleware, requireRole } = require('../auth');
+const { authMiddleware, requireModule } = require('../auth');
 const { requireActiveSubscription } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
 
@@ -8,7 +8,7 @@ const router = express.Router();
 router.use(authMiddleware);
 router.use(requireActiveSubscription);
 
-const FIELDS = 'id, name, country, currency, currency_symbol, tax_name, tax_rate, service_charge_rate';
+const FIELDS = 'id, name, country, currency, currency_symbol, tax_name, tax_rate, service_charge_rate, prices_include_tax, tip_suggested_pct';
 
 // Configuración general del restaurante: impuesto local y % de servicio
 // opcional. El % de servicio no es un impuesto: depende de cada país/negocio
@@ -19,8 +19,11 @@ router.get('/', ah(async (req, res) => {
   res.json(restaurant);
 }));
 
-router.put('/', requireRole('admin'), ah(async (req, res) => {
-  const { taxName, taxRate, serviceChargeRate } = req.body;
+router.put('/', requireModule(), ah(async (req, res) => {
+  const { taxName, taxRate, serviceChargeRate, pricesIncludeTax, tipSuggestedPct } = req.body;
+  if (tipSuggestedPct != null && (tipSuggestedPct < 0 || tipSuggestedPct > 100)) {
+    return res.status(400).json({ error: 'La propina sugerida debe estar entre 0 y 100' });
+  }
   if (serviceChargeRate != null && (serviceChargeRate < 0 || serviceChargeRate > 100)) {
     return res.status(400).json({ error: 'El % de servicio debe estar entre 0 y 100' });
   }
@@ -31,9 +34,13 @@ router.put('/', requireRole('admin'), ah(async (req, res) => {
     UPDATE restaurants SET
       tax_name = COALESCE(?, tax_name),
       tax_rate = COALESCE(?, tax_rate),
-      service_charge_rate = COALESCE(?, service_charge_rate)
+      service_charge_rate = COALESCE(?, service_charge_rate),
+      prices_include_tax = COALESCE(?, prices_include_tax),
+      tip_suggested_pct = COALESCE(?, tip_suggested_pct)
     WHERE id = ?
-  `, [taxName, taxRate, serviceChargeRate, req.user.restaurant_id]);
+  `, [taxName, taxRate, serviceChargeRate,
+      pricesIncludeTax == null ? null : (pricesIncludeTax ? 1 : 0),
+      tipSuggestedPct == null ? null : tipSuggestedPct, req.user.restaurant_id]);
 
   const restaurant = await db.get(`SELECT ${FIELDS} FROM restaurants WHERE id = ?`, [req.user.restaurant_id]);
   res.json(restaurant);

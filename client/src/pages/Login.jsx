@@ -1,19 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
-const COUNTRIES = [
-  { code: 'CO', name: 'Colombia', currency: 'COP', symbol: '$', tax: 'IVA', rate: 19 },
-  { code: 'MX', name: 'México', currency: 'MXN', symbol: '$', tax: 'IVA', rate: 16 },
-  { code: 'PE', name: 'Perú', currency: 'PEN', symbol: 'S/', tax: 'IGV', rate: 18 },
-  { code: 'AR', name: 'Argentina', currency: 'ARS', symbol: '$', tax: 'IVA', rate: 21 },
-  { code: 'CL', name: 'Chile', currency: 'CLP', symbol: '$', tax: 'IVA', rate: 19 },
-  { code: 'EC', name: 'Ecuador', currency: 'USD', symbol: '$', tax: 'IVA', rate: 15 },
-  { code: 'UY', name: 'Uruguay', currency: 'UYU', symbol: '$', tax: 'IVA', rate: 22 },
-  { code: 'BR', name: 'Brasil', currency: 'BRL', symbol: 'R$', tax: 'ICMS', rate: 17 },
-  { code: 'OTHER', name: 'Otro país', currency: 'USD', symbol: '$', tax: 'IVA', rate: 0 },
-];
 
 export default function Login() {
   const [searchParams] = useSearchParams();
@@ -25,16 +14,26 @@ export default function Login() {
 
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [regForm, setRegForm] = useState({
-    restaurantName: '', country: 'CO', adminName: '', email: '', password: ''
+    restaurantName: '', country: 'VE', adminName: '', email: '', password: '', terraceTables: 10, acceptTerms: false
   });
+  // Perfiles legales por país servidos por el backend (server/compliance.js)
+  const [legal, setLegal] = useState({ countries: [] });
+  useEffect(() => {
+    axios.get('/api/compliance/countries').then(r => setLegal(r.data)).catch(() => {});
+  }, []);
+  const profile = legal.countries.find(c => c.code === regForm.country);
+  const [trialDays, setTrialDays] = useState(30);
+  useEffect(() => {
+    axios.get('/api/health').then(r => r.data.trial_days && setTrialDays(r.data.trial_days)).catch(() => {});
+  }, []);
 
   async function handleLogin(e) {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
       const { data } = await axios.post('/api/auth/login', loginForm);
-      login(data.token, data.user);
-      navigate('/app');
+      login(data.token, data.user, data.permissions);
+      navigate(data.password_expired ? '/app/mi-cuenta?expirada=1' : '/app');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al iniciar sesión');
     } finally {
@@ -45,16 +44,9 @@ export default function Login() {
   async function handleRegister(e) {
     e.preventDefault();
     setError(''); setLoading(true);
-    const c = COUNTRIES.find(c => c.code === regForm.country);
     try {
-      const { data } = await axios.post('/api/auth/register-restaurant', {
-        ...regForm,
-        currency: c.currency,
-        currencySymbol: c.symbol,
-        taxName: c.tax,
-        taxRate: c.rate
-      });
-      login(data.token, data.user);
+      const { data } = await axios.post('/api/auth/register-restaurant', regForm);
+      login(data.token, data.user, data.permissions);
       navigate('/app');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al registrar');
@@ -67,10 +59,14 @@ export default function Login() {
     <div className="login-wrap">
       <div className="login-box">
         <Link to="/" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none' }}>← Volver al inicio</Link>
-        <h1>🍽️ Restaurant SaaS</h1>
+        <h1>🍽️ Sistema A&B</h1>
         <div className="tab-switch">
           <button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>Iniciar sesión</button>
           <button className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>Registrar restaurante</button>
+        </div>
+
+        <div className="demo-notice">
+          🎁 <strong>Demo gratis por {trialDays} días.</strong> Sin tarjeta: registra tu restaurante y pruébalo completo.
         </div>
 
         {error && <div className="error-msg">{error}</div>}
@@ -101,8 +97,19 @@ export default function Login() {
             <div className="field">
               <label>País</label>
               <select value={regForm.country} onChange={e => setRegForm({ ...regForm, country: e.target.value })}>
-                {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+                {legal.countries.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
               </select>
+              {profile && (
+                <div style={{ fontSize: 12, color: '#6b7280', marginTop: 6, lineHeight: 1.5 }}>
+                  {profile.tax_name} {profile.tax_rate} % · {profile.currency} · Facturación: {profile.fiscal_authority}<br />
+                  Datos personales: {profile.data_protection}
+                </div>
+              )}
+            </div>
+            <div className="field">
+              <label>Mesas de terraza (el salón principal se crea con 30 mesas)</label>
+              <input type="number" min="0" max="200" value={regForm.terraceTables}
+                onChange={e => setRegForm({ ...regForm, terraceTables: e.target.value })} />
             </div>
             <div className="field">
               <label>Tu nombre (administrador)</label>
@@ -115,10 +122,19 @@ export default function Login() {
                 onChange={e => setRegForm({ ...regForm, email: e.target.value })} />
             </div>
             <div className="field">
-              <label>Contraseña</label>
-              <input type="password" required value={regForm.password}
+              <label>Contraseña (mínimo 8 caracteres)</label>
+              <input type="password" required minLength={8} value={regForm.password}
                 onChange={e => setRegForm({ ...regForm, password: e.target.value })} />
             </div>
+            <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12, color: '#374151', marginBottom: 12 }}>
+              <input type="checkbox" required style={{ width: 'auto', marginTop: 2 }} checked={regForm.acceptTerms}
+                onChange={e => setRegForm({ ...regForm, acceptTerms: e.target.checked })} />
+              <span>
+                Acepto los <Link to="/terminos" target="_blank">términos</Link> y la <Link to="/privacidad" target="_blank">política de privacidad</Link>,
+                y que mi negocio es responsable de cumplir la ley tributaria, laboral y de datos personales de su país.
+                {legal.disclaimer && <span style={{ display: 'block', color: '#6b7280', marginTop: 4 }}>{legal.disclaimer}</span>}
+              </span>
+            </label>
             <button className="btn" style={{ width: '100%' }} disabled={loading}>
               {loading ? 'Creando...' : 'Crear restaurante'}
             </button>

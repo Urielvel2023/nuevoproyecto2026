@@ -1,23 +1,32 @@
-# Blueprint de Render: define automáticamente la base de datos PostgreSQL y
-# el servicio web, con las variables de entorno ya conectadas entre sí.
-# Para usarlo: en Render, "New +" → "Blueprint" → selecciona este repositorio.
-# No hace falta escribir ningún comando ni variable a mano.
-databases:
-  - name: restaurant-saas-db
-    plan: free
-
+# Blueprint de Render — VERSIÓN DE PRUEBA GRATUITA
+# Crea solo el servicio web en plan gratis, sin base de datos de Render: la app
+# guarda los datos en SQLite dentro del propio servicio. Así no usa la única
+# base de datos gratuita de la cuenta ni toca otros proyectos.
+#
+# Importante: en el plan gratis el disco se reinicia cuando el servicio se
+# "duerme" (unos 15 min sin uso) o se vuelve a publicar, y los datos de prueba
+# se pierden. Sirve para ver y mostrar la app, no para clientes reales.
+# Para producción: agrega una base PostgreSQL (DATABASE_URL) y usa planes pagados.
+#
+# En Render: New Blueprint Instance → este repositorio → elige la rama a publicar.
 services:
   - type: web
-    name: restaurant-saas
-    env: node
+    name: costos-para-restaurantes
+    runtime: node
     plan: free
-    branch: main
-    buildCommand: npm install --prefix client && npm run build --prefix client && npm install --prefix server
+    buildCommand: npm install --prefix client --include=dev && npm run build --prefix client && npm install --prefix server --omit=dev
     startCommand: npm start --prefix server
+    healthCheckPath: /api/health
+    autoDeploy: true
     envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22
       - key: JWT_SECRET
         generateValue: true
-      - key: DATABASE_URL
-        fromDatabase:
-          name: restaurant-saas-db
-          property: connectionString
+      - key: TRIAL_DAYS
+        value: "30"
+      # true = al terminar la prueba, la app muestra "Prueba terminada" y bloquea el uso
+      - key: ENFORCE_BILLING
+        value: "true"

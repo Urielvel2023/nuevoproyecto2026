@@ -24,7 +24,7 @@ export default function Landing() {
   return (
     <div className="public-page">
       <nav className="public-nav">
-        <Link to="/" className="logo">🍽️ Restaurant SaaS</Link>
+        <Link to="/" className="logo">🍽️ Sistema A&B</Link>
         <div className="nav-links">
           <a href="#precios">Precios</a>
           <Link to="/login">Iniciar sesión</Link>
@@ -42,7 +42,7 @@ export default function Landing() {
           <Link to="/login?registro=1" className="btn large">Empezar gratis</Link>
           <a href="#precios" className="btn secondary large">Ver precios</a>
         </div>
-        <p className="trial-note">14 días de prueba gratis. No se necesita tarjeta para empezar.</p>
+        <p className="trial-note">30 días de prueba gratis. No se necesita tarjeta para empezar.</p>
       </header>
 
       <section className="public-section">
@@ -61,7 +61,7 @@ export default function Landing() {
 
       <section className="public-section" id="precios">
         <h2>Precios simples</h2>
-        <p className="section-subtitle">Empieza gratis 14 días. Cancela cuando quieras.</p>
+        <p className="section-subtitle">Empieza gratis 30 días. Cancela cuando quieras.</p>
         <div className="pricing-grid">
           {plans.map((p, i) => (
             <div key={p.id} className={`price-card ${i === 1 ? 'featured' : ''}`}>
@@ -90,7 +90,7 @@ export default function Landing() {
 
       <footer className="public-footer">
         <div className="footer-inner">
-          <span className="copyright">© {new Date().getFullYear()} Restaurant SaaS. Todos los derechos reservados.</span>
+          <span className="copyright">© {new Date().getFullYear()} Sistema A&B. Todos los derechos reservados.</span>
           <div>
             <Link to="/terminos">Términos y condiciones</Link>
             <Link to="/privacidad">Política de privacidad</Link>

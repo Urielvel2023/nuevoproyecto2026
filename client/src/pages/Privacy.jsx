@@ -4,7 +4,7 @@ export default function Privacy() {
   return (
     <div className="public-page">
       <nav className="public-nav">
-        <Link to="/" className="logo">🍽️ Restaurant SaaS</Link>
+        <Link to="/" className="logo">🍽️ Sistema A&B</Link>
         <div className="nav-links">
           <Link to="/login">Iniciar sesión</Link>
           <Link to="/login?registro=1" className="cta">Registrar mi restaurante</Link>
@@ -18,7 +18,7 @@ export default function Privacy() {
         <p>
           Esta política describe cómo Uriel Alexander Velandia Vera
           ("nosotros") recolecta, usa, almacena y protege los datos personales de quienes usan
-          Restaurant SaaS (el "Servicio"), en cumplimiento de
+          Sistema A&B (el "Servicio"), en cumplimiento de
           la Ley 1581 de 2012 y el Decreto 1377 de 2013 de Colombia (régimen de Protección de Datos Personales /
           Habeas Data), y de la normativa equivalente de otros países donde operes.
         </p>
@@ -115,7 +115,7 @@ export default function Privacy() {
 
       <footer className="public-footer">
         <div className="footer-inner">
-          <span className="copyright">© {new Date().getFullYear()} Restaurant SaaS. Todos los derechos reservados.</span>
+          <span className="copyright">© {new Date().getFullYear()} Sistema A&B. Todos los derechos reservados.</span>
           <div>
             <Link to="/terminos">Términos y condiciones</Link>
             <Link to="/privacidad">Política de privacidad</Link>

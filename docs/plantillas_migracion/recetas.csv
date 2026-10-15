@@ -1,0 +1,3 @@
+codigo,nombre,tipo,clase,categoria_menu,rendimiento_cantidad,rendimiento_unidad,misc_pct,food_cost_objetivo_pct,vendible,origen_hoja,observaciones
+REC-0001,Salsa menier,cocina,subreceta,,20,porcion,0,,no,SUBRECETAS2,
+REC-0002,Pescado a la menier,cocina,plato,Pescados y mariscos,1,porcion,25,30,si,PRINCIPALES,

@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Settings() {
-  const { api } = useAuth();
+  const { api, can } = useAuth();
   const [restaurant, setRestaurant] = useState(null);
-  const [form, setForm] = useState({ taxName: '', taxRate: 0, serviceChargeRate: 0 });
+  const [form, setForm] = useState({ taxName: '', taxRate: 0, serviceChargeRate: 0, pricesIncludeTax: false, tipSuggestedPct: 10 });
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
@@ -14,7 +14,9 @@ export default function Settings() {
       setForm({
         taxName: res.data.tax_name,
         taxRate: res.data.tax_rate,
-        serviceChargeRate: res.data.service_charge_rate
+        serviceChargeRate: res.data.service_charge_rate,
+        pricesIncludeTax: !!res.data.prices_include_tax,
+        tipSuggestedPct: res.data.tip_suggested_pct
       });
     });
   }
@@ -28,7 +30,9 @@ export default function Settings() {
       const { data } = await api.put('/settings', {
         taxName: form.taxName,
         taxRate: Number(form.taxRate),
-        serviceChargeRate: Number(form.serviceChargeRate)
+        serviceChargeRate: Number(form.serviceChargeRate),
+        pricesIncludeTax: form.pricesIncludeTax,
+        tipSuggestedPct: Number(form.tipSuggestedPct)
       });
       setRestaurant(data);
       setSaved(true);
@@ -62,8 +66,16 @@ export default function Settings() {
           <div className="field"><label>% de servicio (propina/servicio)</label>
             <input type="number" step="any" min="0" max="100" value={form.serviceChargeRate}
               onChange={e => setForm({ ...form, serviceChargeRate: e.target.value })} /></div>
+          <div className="field"><label>% de propina sugerida (voluntaria, en la precuenta)</label>
+            <input type="number" step="any" min="0" max="100" value={form.tipSuggestedPct}
+              onChange={e => setForm({ ...form, tipSuggestedPct: e.target.value })} /></div>
+          <label className="check-line" style={{ gridColumn: '1 / -1' }}>
+            <input type="checkbox" checked={form.pricesIncludeTax}
+              onChange={e => setForm({ ...form, pricesIncludeTax: e.target.checked })} />
+            Los precios de la carta ya incluyen el {form.taxName || 'impuesto'} (se desglosa en la cuenta)
+          </label>
           <div className="field" style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <button className="btn" style={{ width: '100%' }}>Guardar</button>
+            <button className="btn" style={{ width: '100%' }} disabled={!can('configuracion', 'editar')}>Guardar</button>
           </div>
         </form>
       </div>

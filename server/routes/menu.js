@@ -1,7 +1,8 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
-const { authMiddleware, requireRole } = require('../auth');
+const { authMiddleware, requireModule } = require('../auth');
+const { can } = require('../permissions');
 const { requireActiveSubscription } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
 
@@ -16,7 +17,7 @@ router.get('/categories', ah(async (req, res) => {
   res.json(cats);
 }));
 
-router.post('/categories', requireRole('admin'), ah(async (req, res) => {
+router.post('/categories', requireModule(), ah(async (req, res) => {
   const { name, sort_order } = req.body;
   if (!name) return res.status(400).json({ error: 'El nombre es requerido' });
   const id = uuidv4();
@@ -25,7 +26,7 @@ router.post('/categories', requireRole('admin'), ah(async (req, res) => {
   res.json(await db.get('SELECT * FROM menu_categories WHERE id = ?', [id]));
 }));
 
-router.delete('/categories/:id', requireRole('admin'), ah(async (req, res) => {
+router.delete('/categories/:id', requireModule(), ah(async (req, res) => {
   await db.run('DELETE FROM menu_categories WHERE id = ? AND restaurant_id = ?',
     [req.params.id, req.user.restaurant_id]);
   res.json({ ok: true });
@@ -49,10 +50,15 @@ router.get('/items', ah(async (req, res) => {
     LEFT JOIN menu_categories mc ON mc.id = mi.category_id
     WHERE mi.restaurant_id = ? ORDER BY mc.sort_order, mi.name
   `, [req.user.restaurant_id]);
-  res.json(await Promise.all(items.map(itemWithCost)));
+  const withCost = await Promise.all(items.map(itemWithCost));
+  // Meseros/caja ven si el plato está costeado y recetado, pero no el costo ni el margen
+  if (!can(req.user.role, 'recetas', 'ver')) {
+    return res.json(withCost.map(({ cost, margin, ...rest }) => ({ ...rest, has_recipe: !!rest.recipe_id })));
+  }
+  res.json(withCost.map(i => ({ ...i, has_recipe: !!i.recipe_id })));
 }));
 
-router.post('/items', requireRole('admin'), ah(async (req, res) => {
+router.post('/items', requireModule(), ah(async (req, res) => {
   const { name, description, price, category_id, recipe_id } = req.body;
   if (!name || price == null) return res.status(400).json({ error: 'Nombre y precio son requeridos' });
   const id = uuidv4();
@@ -63,11 +69,11 @@ router.post('/items', requireRole('admin'), ah(async (req, res) => {
 
   const item = await db.get('SELECT * FROM menu_items WHERE id = ?', [id]);
   const full = await itemWithCost(item);
-  req.app.get('io').to(req.user.restaurant_id).emit('menu:changed', full);
+  req.app.get('io').to(req.user.restaurant_id).emit('menu:changed', { id: full.id }); // sin costos: los meseros también escuchan
   res.json(full);
 }));
 
-router.put('/items/:id', requireRole('admin'), ah(async (req, res) => {
+router.put('/items/:id', requireModule(), ah(async (req, res) => {
   const item = await db.get('SELECT * FROM menu_items WHERE id = ? AND restaurant_id = ?',
     [req.params.id, req.user.restaurant_id]);
   if (!item) return res.status(404).json({ error: 'No encontrado' });
@@ -89,11 +95,11 @@ router.put('/items/:id', requireRole('admin'), ah(async (req, res) => {
   const full = await itemWithCost(updated);
   // Este es el evento clave de "sincronización en tiempo real": todos los dispositivos
   // conectados al restaurante (caja, meseros, cocina) reciben el precio/disponibilidad actualizada al instante
-  req.app.get('io').to(req.user.restaurant_id).emit('menu:changed', full);
+  req.app.get('io').to(req.user.restaurant_id).emit('menu:changed', { id: full.id }); // sin costos: los meseros también escuchan
   res.json(full);
 }));
 
-router.delete('/items/:id', requireRole('admin'), ah(async (req, res) => {
+router.delete('/items/:id', requireModule(), ah(async (req, res) => {
   await db.run('DELETE FROM menu_items WHERE id = ? AND restaurant_id = ?', [req.params.id, req.user.restaurant_id]);
   req.app.get('io').to(req.user.restaurant_id).emit('menu:deleted', { id: req.params.id });
   res.json({ ok: true });

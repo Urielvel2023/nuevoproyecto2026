@@ -5,3 +5,4 @@ server/db/*.db-shm
 server/db/*.db-wal
 .env
 *.log
+deploy/vps/backups/

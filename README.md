@@ -6,24 +6,27 @@ Sistema web multi-restaurante para bares y restaurantes en Latinoamérica: inven
 
 Si quieres una URL pública que puedas usar desde cualquier computador o celular sin instalar nada, salta directo a la sección **[Desplegar en Render](#desplegar-en-render)** más abajo. El resto de este documento (correr en tu computador) es solo para desarrollo local.
 
+> 📘 **Diseño integral del sistema** (diagnóstico del recetario, modelo de datos, reglas de costeo, dashboards, KPIs, roadmap, migración desde Excel, riesgos y matriz de accesos): ver [`docs/SISTEMA_INTEGRAL_LIVING.md`](docs/SISTEMA_INTEGRAL_LIVING.md).
+
 ## Módulos incluidos
 
 1. **Multi-tenant**: cada restaurante que se registra tiene su propio espacio aislado (inventario, menú, mesas, usuarios, contabilidad, etc.).
 2. **Inventario/Almacén**: productos con stock, unidad, costo unitario, proveedor, alertas de stock mínimo, historial de movimientos (entradas/salidas/ajustes).
 3. **Recetas / fichas técnicas**: cada plato o bebida se arma con ingredientes del inventario; el costo se calcula automáticamente según el costo actual de cada insumo.
 4. **Menú**: categorías, platos/bebidas, precio de venta, margen (precio − costo), disponible/agotado.
-5. **Mesas y pedidos**: el mesero abre una mesa, agrega ítems del menú, la cuenta se va sumando, se puede cerrar/cobrar.
+5. **Mesas, pedidos y cobro**: plano por zonas (salón con mínimo 30 mesas, terraza configurable, barra, VIP, delivery) con estados libre / ocupada / por limpiar / reservada / unida / bloqueada. La ventana del mesero muestra el menú costeado y recetado con botones **Incluir**, **Modificar** y **Anular**, modificadores para cocina y comensal por ítem. Incluye precuenta, descuentos y cortesías con PIN de supervisor, unir / separar / transferir mesas, cuenta dividida (por comensal, ítem, monto o partes iguales), varias formas de pago, propina, vuelto y factura al cerrar.
 6. **Comanda de cocina/barra**: pantalla separada en tiempo real con los pedidos pendientes; se pueden marcar como "listo" y "entregado".
 7. **Descuento automático de inventario**: al vender un plato, se descuentan del almacén los insumos según su receta (y se repone si se cancela el ítem).
 8. **Sincronización en tiempo real**: todos los cambios (precios, disponibilidad, nuevos pedidos, estados de cocina, domicilios) se reflejan al instante en todas las pantallas conectadas del mismo restaurante, vía WebSockets (Socket.io).
-9. **Multi-país**: cada restaurante define su moneda, símbolo, nombre del impuesto y tasa al registrarse.
-10. **Reportes**: ventas totales, ticket promedio, ventas por mesero, por plato/bebida, por categoría, y tendencia diaria — con gráficas.
-11. **Facturación electrónica (DIAN / SAT / SUNAT)**: emite el documento fiscal de cada cuenta cerrada a través de un proveedor tecnológico certificado (Alegra para Colombia, Facturama para México, Nubefact para Perú), con numeración consecutiva, PDF descargable y CUFE/folio fiscal. Ver [Facturación electrónica](#facturación-electrónica) para lo que necesitas configurar.
-12. **Contabilidad básica**: cuentas bancarias/caja, categorías de gasto, registro de gastos e ingresos manuales, registro automático del ingreso al cerrar una cuenta, y un resumen tipo estado de resultados (P&L) con saldos por cuenta.
-13. **Nómina y asistencia**: cada empleado marca su entrada/salida desde el menú lateral; el admin define salario (mensual o por hora) y genera períodos de nómina que calculan el pago bruto/neto con deducciones de salud y pensión configurables.
-14. **Domicilios / apps de delivery**: página pública de pedido directo (sin comisión de terceros), webhook por restaurante para recibir pedidos empujados desde apps de domicilios, y un flujo de estados (recibido → preparando → en camino → entregado).
-15. **Suscripción SaaS**: cada restaurante nace con una prueba gratuita de 14 días; se puede cobrar la suscripción mensual con Stripe Checkout y gestionar el método de pago desde el portal de Stripe.
-16. **Base de datos lista para producción**: usa SQLite en desarrollo local (cero instalación) y PostgreSQL en producción (ver [Base de datos](#base-de-datos)).
+9. **Seguridad por departamento**: roles de gerencia, contaduría, talento humano, cocina, bar, salón, caja, almacén y auditoría, con una matriz de permisos por módulo y acción (`server/permissions.js`). Cada usuario tiene su propia clave, con bloqueo por intentos fallidos, expiración de contraseña, PIN de autorización especial y bitácora de auditoría (quién, qué, cuándo, desde dónde, antes/después).
+10. **Multi-país**: cada restaurante define su moneda, símbolo, nombre del impuesto y tasa al registrarse.
+11. **Reportes**: ventas totales, ticket promedio, ventas por mesero, por plato/bebida, por categoría, y tendencia diaria — con gráficas.
+12. **Facturación electrónica (DIAN / SAT / SUNAT)**: emite el documento fiscal de cada cuenta cerrada a través de un proveedor tecnológico certificado (Alegra para Colombia, Facturama para México, Nubefact para Perú), con numeración consecutiva, PDF descargable y CUFE/folio fiscal. Ver [Facturación electrónica](#facturación-electrónica) para lo que necesitas configurar.
+13. **Contabilidad básica**: cuentas bancarias/caja, categorías de gasto, registro de gastos e ingresos manuales, registro automático del ingreso al cerrar una cuenta, y un resumen tipo estado de resultados (P&L) con saldos por cuenta.
+14. **Nómina y asistencia**: cada empleado marca su entrada/salida desde el menú lateral; el admin define salario (mensual o por hora) y genera períodos de nómina que calculan el pago bruto/neto con deducciones de salud y pensión configurables.
+15. **Domicilios / apps de delivery**: página pública de pedido directo (sin comisión de terceros), webhook por restaurante para recibir pedidos empujados desde apps de domicilios, y un flujo de estados (recibido → preparando → en camino → entregado).
+16. **Suscripción SaaS**: cada restaurante nace con una prueba gratuita de 30 días (configurable con `TRIAL_DAYS`); se puede cobrar la suscripción mensual con Stripe Checkout y gestionar el método de pago desde el portal de Stripe.
+17. **Base de datos lista para producción**: usa SQLite en desarrollo local (cero instalación) y PostgreSQL en producción (ver [Base de datos](#base-de-datos)).
 
 ## Estructura del proyecto
 
@@ -33,6 +36,7 @@ restaurant-saas/
 │   ├── db/
 │   │   ├── schema.sql              Esquema para SQLite (desarrollo local)
 │   │   ├── schema.pg.sql           Esquema equivalente para PostgreSQL (producción)
+│   │   ├── migrations.js           Migraciones versionadas (se aplican solas al arrancar)
 │   │   └── index.js                Adaptador de base de datos (elige motor según DATABASE_URL)
 │   ├── routes/
 │   │   ├── auth.js                 Registro de restaurante, login, crear personal
@@ -48,7 +52,8 @@ restaurant-saas/
 │   │   └── billing.js              Suscripción SaaS (Stripe)
 │   ├── services/                   Lógica de negocio compartida entre rutas
 │   ├── utils/asyncHandler.js       Envoltorio de errores para rutas async
-│   ├── auth.js                     JWT y middlewares de roles
+│   ├── auth.js                     JWT y middlewares de roles/permisos
+│   ├── permissions.js              Matriz de accesos por departamento (rol × módulo × acción)
 │   └── index.js                    Servidor Express + Socket.io
 └── client/                    Frontend: React + Vite
     └── src/
@@ -95,7 +100,9 @@ Abre `http://localhost:5173` en el navegador. El frontend ya está configurado p
    - Ve a **Almacén** y agrega tus insumos (con su costo unitario).
    - Ve a **Recetas** y arma las fichas técnicas de tus platos/bebidas usando esos insumos.
    - Ve a **Menú**, crea categorías y agrega los platos enlazando su receta (el costo y margen se calculan solos).
-   - Ve a **Personal** y crea cuentas para tus meseros y personal de cocina, y en **Nómina** define su salario.
+   - Ve a **Usuarios y accesos** y crea una cuenta por persona con su departamento (gerencia, contaduría, RRHH, cocina, bar, mesero, caja, almacén, auditoría). En **Nómina** define su salario.
+   - En **Mi clave / PIN** define tu PIN de autorización (gerencia o administrador), necesario para anulaciones, descuentos y cortesías.
+   - En **Mesas → Configurar zonas** ajusta el número de mesas de salón (mínimo 30), terraza, barra y VIP.
    - Ve a **Facturación** y configura tus datos fiscales (opcional, ver más abajo).
    - Ve a **Contabilidad** y crea tu(s) cuenta(s) bancaria/caja.
 4. Los meseros inician sesión y van a **Mesas** para abrir cuentas y tomar pedidos, o a **Domicilios** para pedidos a domicilio/recoger.
@@ -133,7 +140,7 @@ Si ya facturas por fuera del sistema (por ejemplo con el portal gratuito de la D
 
 ## Suscripción SaaS (cobrar a otros restaurantes)
 
-Cada restaurante que se registra recibe automáticamente 14 días de prueba. Para cobrar la suscripción hay dos pasarelas disponibles — puedes activar una o ambas:
+Cada restaurante que se registra recibe automáticamente 30 días de prueba (cámbialo con la variable `TRIAL_DAYS`). Para cobrar la suscripción hay dos pasarelas disponibles — puedes activar una o ambas:
 
 ### Opción A — Wompi (recomendada para Colombia)
 
@@ -188,7 +195,42 @@ Sin ninguna de estas variables, el sistema funciona exactamente igual (la pesta�
 
 ---
 
+## Instalar en un VPS (Hostinger u otro)
+
+Con Docker, HTTPS automático y respaldos diarios, en 3 comandos:
+
+```bash
+git clone https://github.com/Urielvel2023/nuevoproyecto2026.git /opt/living-pos
+cd /opt/living-pos
+DOMAIN=app.tudominio.com bash deploy/vps/instalar.sh
+```
+
+Guía completa paso a paso (hPanel, DNS, actualizar, respaldar y restaurar): [`docs/DESPLIEGUE_VPS_HOSTINGER.md`](docs/DESPLIEGUE_VPS_HOSTINGER.md).
+
+**Despliegue automático desde GitHub:** cada cambio en `main` se prueba (GitHub Actions, SQLite y PostgreSQL) y, si pasa, se publica solo en el VPS. Configuración en [`docs/GITHUB_DESPLIEGUE_AUTOMATICO.md`](docs/GITHUB_DESPLIEGUE_AUTOMATICO.md).
+
+---
+
 ## Desplegar en Render
+
+### Opción rápida (recomendada): Blueprint en un clic
+
+El repositorio trae `render.yaml`, que crea el servicio web con todo configurado (incluida una `JWT_SECRET` aleatoria).
+
+1. Entra a [render.com](https://render.com) con tu cuenta (puedes usar "Sign up with GitHub").
+2. Clic en **New + → Blueprint**.
+3. Conecta el repositorio `nuevoproyecto2026` y elige la rama a publicar.
+4. Render muestra el servicio `costos-para-restaurantes` en plan **gratis**.
+5. Clic en **Apply**. En unos 5 minutos queda en línea.
+6. Abre la URL (algo como `https://costos-para-restaurantes.onrender.com`), pestaña **Registrar restaurante**.
+
+**Esta configuración es una versión de prueba gratuita:** no crea base de datos en Render (usa SQLite dentro del servicio), así que no ocupa la única base gratis de la cuenta ni toca otros proyectos. En el plan gratis los datos se borran cuando el servicio se "duerme" (unos 15 minutos sin uso) o se vuelve a publicar. Para clientes reales, agrega una base PostgreSQL (variable `DATABASE_URL`) y usa planes pagados, o instala en un VPS (ver arriba).
+
+Seguridad en producción: el servidor no arranca sin una `JWT_SECRET` de al menos 32 caracteres, envía cabeceras de seguridad (HSTS, anti-iframe) y limita los intentos de inicio de sesión por IP, además del bloqueo por usuario.
+
+Dominio propio: en el servicio → **Settings → Custom Domains**, agrega tu dominio, crea el registro DNS que indique Render y actualiza `APP_URL`.
+
+### Opción manual
 
 Esto publica tu sistema en una URL pública como `https://tu-restaurante.onrender.com`, accesible desde cualquier navegador, sin que nadie tenga que instalar nada. El backend ya está preparado para servir el frontend compilado como un solo sitio web.
 

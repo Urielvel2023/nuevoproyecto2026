@@ -5,7 +5,8 @@
   "type": "commonjs",
   "scripts": {
     "start": "node index.js",
-    "seed": "node db/seed.js"
+    "seed": "node db/seed.js",
+    "test:smoke": "node test/smoke.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -18,5 +19,8 @@
     "socket.io": "^4.7.5",
     "stripe": "^17.2.0",
     "uuid": "^9.0.1"
+  },
+  "engines": {
+    "node": ">=20 <23"
   }
 }

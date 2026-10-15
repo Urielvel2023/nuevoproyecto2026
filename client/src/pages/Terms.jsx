@@ -4,7 +4,7 @@ export default function Terms() {
   return (
     <div className="public-page">
       <nav className="public-nav">
-        <Link to="/" className="logo">🍽️ Restaurant SaaS</Link>
+        <Link to="/" className="logo">🍽️ Sistema A&B</Link>
         <div className="nav-links">
           <Link to="/login">Iniciar sesión</Link>
           <Link to="/login?registro=1" className="cta">Registrar mi restaurante</Link>
@@ -17,7 +17,7 @@ export default function Terms() {
 
         <p>
           Estos Términos y Condiciones ("Términos") regulan el acceso y uso de la plataforma
-          Restaurant SaaS (el "Servicio"), un software como servicio (SaaS) para la gestión de restaurantes y
+          Sistema A&B (el "Servicio"), un software como servicio (SaaS) para la gestión de restaurantes y
           bares, operado por Uriel Alexander Velandia Vera, persona natural
           (<span className="placeholder">[cédula/NIT — actualiza cuando registres tu negocio]</span>)
           ("nosotros", "la Plataforma"). Al registrarte o usar el Servicio aceptas estos Términos en su
@@ -44,7 +44,7 @@ export default function Terms() {
 
         <h2>3. Planes, precios y facturación</h2>
         <p>
-          Ofrecemos un período de prueba gratuito de 14 días. Al finalizar, para continuar usando el Servicio
+          Ofrecemos un período de prueba gratuito de 30 días. Al finalizar, para continuar usando el Servicio
           debes suscribirte a uno de los planes disponibles, cuyo precio se muestra en la página de precios.
           Los pagos se procesan a través de pasarelas de pago de terceros (Wompi y/o Stripe, según esté
           configurado). No almacenamos los datos completos de tu tarjeta; eso lo maneja directamente la
@@ -73,6 +73,13 @@ export default function Terms() {
           conectas con tus propias credenciales. La responsabilidad de cumplir con tus obligaciones fiscales y
           tributarias ante la autoridad competente de tu país es exclusivamente tuya como comerciante; el
           Servicio no sustituye asesoría contable o legal.
+        </p>
+        <p>
+          Lo mismo aplica a la legislación laboral (nómina, prestaciones, recargos y propinas) y de protección de
+          datos personales del país donde funciona tu establecimiento. Los perfiles por país que trae el Servicio
+          (impuestos, autoridad fiscal, normas aplicables) son parámetros de referencia con fecha de revisión que
+          debes validar con tu contador o abogado local; al registrarte aceptas esta responsabilidad y la
+          aceptación queda registrada con fecha y versión.
         </p>
 
         <h2>7. Disponibilidad del servicio</h2>
@@ -120,7 +127,7 @@ export default function Terms() {
 
       <footer className="public-footer">
         <div className="footer-inner">
-          <span className="copyright">© {new Date().getFullYear()} Restaurant SaaS. Todos los derechos reservados.</span>
+          <span className="copyright">© {new Date().getFullYear()} Sistema A&B. Todos los derechos reservados.</span>
           <div>
             <Link to="/terminos">Términos y condiciones</Link>
             <Link to="/privacidad">Política de privacidad</Link>

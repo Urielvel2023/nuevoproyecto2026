@@ -1,7 +1,7 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
-const { authMiddleware, requireRole } = require('../auth');
+const { authMiddleware, requireModule, requirePermission } = require('../auth');
 const { requireActiveSubscription } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
 const { getOrderFull } = require('../services/orders');
@@ -23,11 +23,11 @@ async function getOrCreateSettings(restaurantId) {
 
 router.get('/providers', (req, res) => res.json(providers));
 
-router.get('/settings', requireRole('admin'), ah(async (req, res) => {
+router.get('/settings', requirePermission('facturacion', 'aprobar'), ah(async (req, res) => {
   res.json(await getOrCreateSettings(req.user.restaurant_id));
 }));
 
-router.put('/settings', requireRole('admin'), ah(async (req, res) => {
+router.put('/settings', requirePermission('facturacion', 'aprobar'), ah(async (req, res) => {
   await getOrCreateSettings(req.user.restaurant_id);
   const {
     tax_id, legal_name, fiscal_regime, address, provider,
@@ -65,20 +65,20 @@ router.put('/settings', requireRole('admin'), ah(async (req, res) => {
   res.json(await getOrCreateSettings(req.user.restaurant_id));
 }));
 
-router.get('/documents', requireRole('admin'), ah(async (req, res) => {
+router.get('/documents', requireModule(), ah(async (req, res) => {
   const docs = await db.all('SELECT * FROM tax_documents WHERE restaurant_id = ? ORDER BY created_at DESC LIMIT 200',
     [req.user.restaurant_id]);
   res.json(docs);
 }));
 
-router.get('/documents/:id', requireRole('admin'), ah(async (req, res) => {
+router.get('/documents/:id', requireModule(), ah(async (req, res) => {
   const doc = await db.get('SELECT * FROM tax_documents WHERE id = ? AND restaurant_id = ?',
     [req.params.id, req.user.restaurant_id]);
   if (!doc) return res.status(404).json({ error: 'No encontrado' });
   res.json(doc);
 }));
 
-router.get('/documents/:id/pdf', ah(async (req, res) => {
+router.get('/documents/:id/pdf', requireModule(), ah(async (req, res) => {
   const doc = await db.get('SELECT * FROM tax_documents WHERE id = ? AND restaurant_id = ?',
     [req.params.id, req.user.restaurant_id]);
   if (!doc) return res.status(404).json({ error: 'No encontrado' });
@@ -93,7 +93,7 @@ router.get('/documents/:id/pdf', ah(async (req, res) => {
 }));
 
 // Emitir un documento fiscal para un pedido ya cerrado.
-router.post('/orders/:orderId', requireRole('mesero', 'admin'), ah(async (req, res) => {
+router.post('/orders/:orderId', requireModule(), ah(async (req, res) => {
   const order = await getOrderFull(db, req.params.orderId, req.user.restaurant_id);
   if (!order) return res.status(404).json({ error: 'Pedido no encontrado' });
   if (order.status !== 'cerrada') {
@@ -110,9 +110,9 @@ router.post('/orders/:orderId', requireRole('mesero', 'admin'), ah(async (req, r
   const { customer_name, customer_tax_id, customer_email, document_type, manual_cufe } = req.body;
 
   const taxPercentage = restaurant.tax_rate || 0;
-  const subtotal = order.items_total;
-  const tax_amount = subtotal * (taxPercentage / 100);
-  const total = subtotal + tax_amount + (order.delivery_fee || 0);
+  const subtotal = order.net_subtotal;
+  const tax_amount = order.tax_amount;
+  const total = order.total;
 
   // Asignación atómica y portable (SQLite/Postgres) del consecutivo, vía
   // UPDATE ... RETURNING, para no reutilizar/saltar números aunque haya
@@ -160,7 +160,7 @@ router.post('/orders/:orderId', requireRole('mesero', 'admin'), ah(async (req, r
 
 // Anular un documento (no reversa la transmisión ante el proveedor si ya fue
 // aceptada; para eso se requiere una nota crédito, fuera de este MVP).
-router.post('/documents/:id/void', requireRole('admin'), ah(async (req, res) => {
+router.post('/documents/:id/void', requirePermission('facturacion', 'anular'), ah(async (req, res) => {
   const doc = await db.get('SELECT * FROM tax_documents WHERE id = ? AND restaurant_id = ?',
     [req.params.id, req.user.restaurant_id]);
   if (!doc) return res.status(404).json({ error: 'No encontrado' });
