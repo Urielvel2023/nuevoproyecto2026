@@ -1,4 +1,4 @@
-# Instalar Living POS en un VPS de Hostinger
+# Instalar Sistema A&B en un VPS de Hostinger
 
 Sirve para cualquier VPS con Ubuntu o Debian (Hostinger, DigitalOcean, Contabo, etc.). La instalación deja corriendo:
 

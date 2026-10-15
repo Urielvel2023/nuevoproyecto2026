@@ -1,4 +1,4 @@
-# Living POS en un VPS (Hostinger u otro): app + PostgreSQL + HTTPS automático + respaldos.
+# Sistema A&B en un VPS (Hostinger u otro): app + PostgreSQL + HTTPS automático + respaldos.
 # Los valores salen del archivo .env (lo crea deploy/vps/instalar.sh).
 services:
   db:

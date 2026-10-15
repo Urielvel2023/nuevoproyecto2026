@@ -59,7 +59,7 @@ export default function Login() {
     <div className="login-wrap">
       <div className="login-box">
         <Link to="/" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none' }}>← Volver al inicio</Link>
-        <h1>🍽️ Living POS</h1>
+        <h1>🍽️ Sistema A&B</h1>
         <div className="tab-switch">
           <button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>Iniciar sesión</button>
           <button className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>Registrar restaurante</button>

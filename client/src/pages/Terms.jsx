@@ -4,7 +4,7 @@ export default function Terms() {
   return (
     <div className="public-page">
       <nav className="public-nav">
-        <Link to="/" className="logo">🍽️ Living POS</Link>
+        <Link to="/" className="logo">🍽️ Sistema A&B</Link>
         <div className="nav-links">
           <Link to="/login">Iniciar sesión</Link>
           <Link to="/login?registro=1" className="cta">Registrar mi restaurante</Link>
@@ -17,7 +17,7 @@ export default function Terms() {
 
         <p>
           Estos Términos y Condiciones ("Términos") regulan el acceso y uso de la plataforma
-          Living POS (el "Servicio"), un software como servicio (SaaS) para la gestión de restaurantes y
+          Sistema A&B (el "Servicio"), un software como servicio (SaaS) para la gestión de restaurantes y
           bares, operado por Uriel Alexander Velandia Vera, persona natural
           (<span className="placeholder">[cédula/NIT — actualiza cuando registres tu negocio]</span>)
           ("nosotros", "la Plataforma"). Al registrarte o usar el Servicio aceptas estos Términos en su
@@ -127,7 +127,7 @@ export default function Terms() {
 
       <footer className="public-footer">
         <div className="footer-inner">
-          <span className="copyright">© {new Date().getFullYear()} Living POS. Todos los derechos reservados.</span>
+          <span className="copyright">© {new Date().getFullYear()} Sistema A&B. Todos los derechos reservados.</span>
           <div>
             <Link to="/terminos">Términos y condiciones</Link>
             <Link to="/privacidad">Política de privacidad</Link>

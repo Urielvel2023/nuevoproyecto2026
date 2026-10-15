@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Instala Living POS en un VPS Ubuntu/Debian (Hostinger u otro).
+# Instala Sistema A&B en un VPS Ubuntu/Debian (Hostinger u otro).
 # Uso (como root, dentro de la carpeta del proyecto):
 #   bash deploy/vps/instalar.sh                 # pregunta el dominio
 #   DOMAIN=app.midominio.com bash deploy/vps/instalar.sh
@@ -72,7 +72,7 @@ for i in $(seq 1 60); do
   if docker compose exec -T app node -e "fetch('http://localhost:4000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" >/dev/null 2>&1; then
     APP_URL_SHOWN="$(grep '^APP_URL=' .env | cut -d= -f2-)"
     echo ""
-    echo "Living POS está en línea: $APP_URL_SHOWN"
+    echo "Sistema A&B está en línea: $APP_URL_SHOWN"
     echo "Abre esa dirección y usa 'Registrar restaurante' para crear tu cuenta."
     echo "Respaldos diarios en: $ROOT/deploy/vps/backups"
     exit 0

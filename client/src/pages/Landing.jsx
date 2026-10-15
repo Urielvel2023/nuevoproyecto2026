@@ -24,7 +24,7 @@ export default function Landing() {
   return (
     <div className="public-page">
       <nav className="public-nav">
-        <Link to="/" className="logo">🍽️ Living POS</Link>
+        <Link to="/" className="logo">🍽️ Sistema A&B</Link>
         <div className="nav-links">
           <a href="#precios">Precios</a>
           <Link to="/login">Iniciar sesión</Link>
@@ -90,7 +90,7 @@ export default function Landing() {
 
       <footer className="public-footer">
         <div className="footer-inner">
-          <span className="copyright">© {new Date().getFullYear()} Living POS. Todos los derechos reservados.</span>
+          <span className="copyright">© {new Date().getFullYear()} Sistema A&B. Todos los derechos reservados.</span>
           <div>
             <Link to="/terminos">Términos y condiciones</Link>
             <Link to="/privacidad">Política de privacidad</Link>
