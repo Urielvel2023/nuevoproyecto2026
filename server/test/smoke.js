@@ -24,7 +24,7 @@ async function call(method, path, token, body, expect = 200) {
   await call('POST', '/auth/create-staff', A, { name: 'Mesero1', email: 'm@x.com', password: 'clave1234', role: 'mesero' });
   await call('POST', '/auth/create-staff', A, { name: 'Mesero2', email: 'm2@x.com', password: 'clave1234', role: 'mesero' });
   await call('POST', '/auth/create-staff', A, { name: 'Coc', email: 'c@x.com', password: 'clave1234', role: 'cocina' });
-  await call('POST', '/auth/create-staff', A, { name: 'RH', email: 'r@x.com', password: 'clave1234', role: 'rrhh' });
+  const rh = await call('POST', '/auth/create-staff', A, { name: 'RH', email: 'r@x.com', password: 'clave1234', role: 'rrhh' });
   const G = (await call('POST', '/auth/login', null, { email: 'g@x.com', password: 'clave1234' })).token;
   await call('PUT', '/auth/me/pin', G, { pin: '4321', current_password: 'clave1234' });
   const M = (await call('POST', '/auth/login', null, { email: 'm@x.com', password: 'clave1234' })).token;
@@ -37,6 +37,17 @@ async function call(method, path, token, body, expect = 200) {
   await call('POST', '/recipes', R, { name: 'x', ingredients: [] }, 403); // rrhh no toca recetas
   await call('GET', '/recipes', M, null, 403);             // mesero no ve costos
   await call('GET', '/accounting/summary', G, null, 200);
+  // rutas sensibles: un permiso de "ver"/"crear" no basta
+  await call('GET', '/delivery/webhook-url', M, null, 403);      // token secreto del webhook
+  await call('GET', '/delivery/webhook-url', G, null, 200);
+  await call('GET', '/invoicing/settings', M, null, 403);        // credenciales del proveedor
+  await call('POST', '/invoicing/documents/no-existe/void', M, null, 403); // anular requiere 'anular'
+  await call('POST', '/invoicing/documents/no-existe/void', G, null, 404);
+  // cambiar el rol aplica de inmediato, aunque el token siga vigente
+  await call('PUT', '/auth/staff/' + rh.id, A, { role: 'cocina' });
+  await call('GET', '/payroll/employees', R, null, 403);
+  await call('PUT', '/auth/staff/' + rh.id, A, { role: 'rrhh' });
+  await call('GET', '/payroll/employees', R, null, 200);
   // inventario + receta + menú
   const ins = await call('POST', '/inventory', A, { name: 'Solomo', unit: 'kg', stock: 10, min_stock: 1, unit_cost: 250000 });
   const rec = await call('POST', '/recipes', C, { name: 'Solomo plancha', type: 'cocina', ingredients: [{ inventory_item_id: ins.id, quantity: 0.2 }] });
@@ -59,6 +70,13 @@ async function call(method, path, token, body, expect = 200) {
   await call('POST', `/orders/${o.id}/discount`, M, { type: 'porcentaje', value: 10, reason: 'cliente frecuente', pin: '0000' }, 403);
   o = await call('POST', `/orders/${o.id}/discount`, M, { type: 'porcentaje', value: 10, reason: 'cliente frecuente', pin: '4321' });
   console.log('cuenta', { items: o.items_total, desc: o.discount_amount, net: o.net_subtotal, iva: o.tax_amount, total: o.total });
+  // un mesero no puede unir (absorber) ni pasar ítems a la mesa abierta de otro mesero
+  const s04 = tables.find(t => t.name === 'S04');
+  const o2 = await call('POST', '/orders', M2, { table_id: s04.id, guests: 2 });
+  await call('POST', `/orders/${o.id}/merge`, M, { table_ids: [s04.id] }, 403);
+  await call('POST', `/orders/${o.id}/move-items`, M, { item_ids: [o.items[0].id], to_table_id: s04.id }, 403);
+  const o2After = await call('GET', '/orders/' + o2.id, M2);
+  console.log('cuenta del otro mesero sigue abierta', o2After.status);
   o = await call('POST', `/orders/${o.id}/merge`, M, { table_ids: [s02.id] });
   o = await call('POST', `/orders/${o.id}/transfer`, M, { to_table_id: t01.id });
   console.log('mesa ahora', o.table_name, 'unidas', o.merged_tables.map(t => t.name));

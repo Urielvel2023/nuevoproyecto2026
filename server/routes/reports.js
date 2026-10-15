@@ -1,13 +1,13 @@
 const express = require('express');
 const db = require('../db');
-const { authMiddleware, requireRole } = require('../auth');
+const { authMiddleware, requireModule } = require('../auth');
 const { requireActiveSubscription } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
 
 const router = express.Router();
 router.use(authMiddleware);
 router.use(requireActiveSubscription);
-router.use(requireRole('admin'));
+router.use(requireModule());
 
 // Filtro de fechas opcional: ?from=2026-01-01&to=2026-12-31
 function dateFilter(req) {

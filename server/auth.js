@@ -31,14 +31,15 @@ function authMiddleware(req, res, next) {
   } catch (e) {
     return res.status(401).json({ error: 'Token inválido o expirado' });
   }
-  // Un usuario desactivado pierde el acceso de inmediato, aunque su token siga vigente
+  // Se consulta el usuario en cada petición: si lo desactivan o le cambian el
+  // rol, el cambio aplica de inmediato aunque su token siga vigente.
   const db = require('./db');
-  db.get('SELECT active FROM users WHERE id = ?', [payload.id])
+  db.get('SELECT active, role FROM users WHERE id = ? AND restaurant_id = ?', [payload.id, payload.restaurant_id])
     .then((row) => {
       if (!row || row.active === 0 || row.active === false) {
         return res.status(401).json({ error: 'Usuario inactivo' });
       }
-      req.user = payload; // { id, restaurant_id, role, name, email }
+      req.user = { ...payload, role: row.role }; // { id, restaurant_id, role, name, email }
       next();
     })
     .catch(next);
@@ -51,15 +52,22 @@ function moduleGuard(module) {
   return (req, res, next) => { req.permModule = module; next(); };
 }
 
-// Compatibilidad con las rutas existentes: requireRole('admin') deja pasar,
-// además de los roles listados, a cualquier rol que tenga en la matriz el
-// permiso equivalente al método HTTP sobre el módulo del router.
+// Solo los roles listados (y admin). Para rutas que de verdad son exclusivas.
 function requireRole(...roles) {
   return (req, res, next) => {
-    if (!req.user) return res.status(403).json({ error: 'No tienes permiso para esta acción' });
-    if (req.user.role === 'admin' || roles.includes(req.user.role)) return next();
+    if (req.user && (req.user.role === 'admin' || roles.includes(req.user.role))) return next();
+    return res.status(403).json({ error: 'No tienes permiso para esta acción' });
+  };
+}
+
+// Rutas de departamento: autoriza según la matriz, usando el módulo del router
+// (moduleGuard) y la acción equivalente al método HTTP. Solo para rutas donde
+// "crear/editar/eliminar/ver" es lo que de verdad pasa; anular, aprobar o ver
+// secretos usan requirePermission con la acción explícita.
+function requireModule() {
+  return (req, res, next) => {
     const action = METHOD_ACTION[req.method] || 'ver';
-    if (req.permModule && can(req.user.role, req.permModule, action)) return next();
+    if (req.user && req.permModule && can(req.user.role, req.permModule, action)) return next();
     return res.status(403).json({ error: 'No tienes permiso para esta acción' });
   };
 }
@@ -71,4 +79,4 @@ function requirePermission(module, action) {
   };
 }
 
-module.exports = { signToken, authMiddleware, requireRole, requirePermission, moduleGuard, JWT_SECRET };
+module.exports = { signToken, authMiddleware, requireRole, requireModule, requirePermission, moduleGuard, JWT_SECRET };

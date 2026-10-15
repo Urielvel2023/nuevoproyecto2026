@@ -1,7 +1,7 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
-const { authMiddleware, requireRole, requirePermission } = require('../auth');
+const { authMiddleware, requirePermission, requireModule } = require('../auth');
 const { can } = require('../permissions');
 const { requireActiveSubscription } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
@@ -208,7 +208,7 @@ router.get('/kds', requirePermission('kds', 'ver'), ah(async (req, res) => {
 
 // Últimas cuentas cerradas, indicando si ya tienen documento fiscal emitido
 // (usado por la pantalla de Facturación para elegir qué cuenta facturar)
-router.get('/recent-closed', requireRole('admin'), ah(async (req, res) => {
+router.get('/recent-closed', requireModule(), ah(async (req, res) => {
   const rows = await db.all(`
     SELECT o.id, o.table_id, o.channel, o.customer_name, o.closed_at,
            t.name as table_name,
@@ -453,6 +453,8 @@ router.post('/:id/merge', requirePermission('pedidos', 'editar'), ah(async (req,
       if (tb.status === 'bloqueada' || tb.status === 'unida') throw httpError(400, `La mesa ${tb.name} no se puede unir (${tb.status})`);
       const other = await t.get(`SELECT * FROM orders WHERE table_id = ? AND status = 'abierta'`, [tid]);
       if (other) {
+        // Un mesero no puede absorber la cuenta abierta de otro mesero
+        assertOwner(req, other);
         const pay = await t.get('SELECT COUNT(*) as n FROM order_payments WHERE order_id = ?', [other.id]);
         if (Number(pay.n) > 0) throw httpError(400, `La mesa ${tb.name} ya tiene pagos registrados`);
         await t.run('UPDATE order_items SET order_id = ? WHERE order_id = ?', [order.id, other.id]);
@@ -494,6 +496,7 @@ router.post('/:id/move-items', requirePermission('pedidos', 'editar'), ah(async 
 
   const targetOrderId = await db.tx(async (t) => {
     let dest = await t.get(`SELECT * FROM orders WHERE table_id = ? AND status = 'abierta'`, [target.id]);
+    if (dest) assertOwner(req, dest);
     if (!dest) {
       if (!['libre', 'reservada'].includes(target.status)) throw httpError(400, 'La mesa destino no está disponible');
       const id = await createOrder(t, { restaurantId: req.user.restaurant_id, tableId: target.id, waiterId: order.waiter_id, guests: 1 });

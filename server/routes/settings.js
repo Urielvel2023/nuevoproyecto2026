@@ -1,6 +1,6 @@
 const express = require('express');
 const db = require('../db');
-const { authMiddleware, requireRole } = require('../auth');
+const { authMiddleware, requireModule } = require('../auth');
 const { requireActiveSubscription } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
 
@@ -19,7 +19,7 @@ router.get('/', ah(async (req, res) => {
   res.json(restaurant);
 }));
 
-router.put('/', requireRole('admin'), ah(async (req, res) => {
+router.put('/', requireModule(), ah(async (req, res) => {
   const { taxName, taxRate, serviceChargeRate, pricesIncludeTax, tipSuggestedPct } = req.body;
   if (tipSuggestedPct != null && (tipSuggestedPct < 0 || tipSuggestedPct > 100)) {
     return res.status(400).json({ error: 'La propina sugerida debe estar entre 0 y 100' });

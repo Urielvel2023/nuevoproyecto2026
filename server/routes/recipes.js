@@ -1,14 +1,14 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
-const { authMiddleware, requireRole } = require('../auth');
+const { authMiddleware, requireModule } = require('../auth');
 const { requireActiveSubscription } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
 
 const router = express.Router();
 router.use(authMiddleware);
 router.use(requireActiveSubscription);
-router.use(requireRole('admin')); // + roles con permiso en el módulo (ver permissions.js)
+router.use(requireModule()); // + roles con permiso en el módulo (ver permissions.js)
 
 async function getRecipeWithCost(recipeId, restaurantId) {
   const recipe = await db.get('SELECT * FROM recipes WHERE id = ? AND restaurant_id = ?',
@@ -43,7 +43,7 @@ router.get('/:id', ah(async (req, res) => {
 }));
 
 // Crear receta con ingredientes: { name, type, notes, ingredients: [{inventory_item_id, quantity}] }
-router.post('/', requireRole('admin'), ah(async (req, res) => {
+router.post('/', requireModule(), ah(async (req, res) => {
   const { name, type, notes, ingredients } = req.body;
   if (!name) return res.status(400).json({ error: 'El nombre es requerido' });
 
@@ -66,7 +66,7 @@ router.post('/', requireRole('admin'), ah(async (req, res) => {
 }));
 
 // Actualizar receta (reemplaza ingredientes)
-router.put('/:id', requireRole('admin'), ah(async (req, res) => {
+router.put('/:id', requireModule(), ah(async (req, res) => {
   const recipe = await db.get('SELECT * FROM recipes WHERE id = ? AND restaurant_id = ?',
     [req.params.id, req.user.restaurant_id]);
   if (!recipe) return res.status(404).json({ error: 'No encontrada' });
@@ -90,7 +90,7 @@ router.put('/:id', requireRole('admin'), ah(async (req, res) => {
   res.json(await getRecipeWithCost(req.params.id, req.user.restaurant_id));
 }));
 
-router.delete('/:id', requireRole('admin'), ah(async (req, res) => {
+router.delete('/:id', requireModule(), ah(async (req, res) => {
   await db.run('DELETE FROM recipes WHERE id = ? AND restaurant_id = ?', [req.params.id, req.user.restaurant_id]);
   res.json({ ok: true });
 }));

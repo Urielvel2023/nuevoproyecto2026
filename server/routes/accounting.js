@@ -1,14 +1,14 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
-const { authMiddleware, requireRole } = require('../auth');
+const { authMiddleware, requireModule } = require('../auth');
 const { requireActiveSubscription } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
 
 const router = express.Router();
 router.use(authMiddleware);
 router.use(requireActiveSubscription);
-router.use(requireRole('admin'));
+router.use(requireModule());
 
 function dateFilter(req) {
   const from = req.query.from || '2000-01-01';

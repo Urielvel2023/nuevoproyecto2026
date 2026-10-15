@@ -1,14 +1,14 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
-const { authMiddleware, requireRole } = require('../auth');
+const { authMiddleware, requireModule } = require('../auth');
 const { requireActiveSubscription } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
 
 const router = express.Router();
 router.use(authMiddleware);
 router.use(requireActiveSubscription);
-router.use(requireRole('admin')); // + roles con permiso en el módulo (ver permissions.js)
+router.use(requireModule()); // + roles con permiso en el módulo (ver permissions.js)
 
 // Listar inventario del restaurante
 router.get('/', ah(async (req, res) => {
@@ -20,7 +20,7 @@ router.get('/', ah(async (req, res) => {
 }));
 
 // Crear producto de inventario
-router.post('/', requireRole('admin'), ah(async (req, res) => {
+router.post('/', requireModule(), ah(async (req, res) => {
   const { name, category, unit, stock, min_stock, unit_cost, supplier } = req.body;
   if (!name) return res.status(400).json({ error: 'El nombre es requerido' });
   const id = uuidv4();
@@ -37,7 +37,7 @@ router.post('/', requireRole('admin'), ah(async (req, res) => {
 // Crear varios productos de una sola vez (pegar una lista). Cada ítem se
 // crea igual que en POST '/', ignorando los que no traigan nombre; no falla
 // todo el lote por un renglón inválido.
-router.post('/bulk', requireRole('admin'), ah(async (req, res) => {
+router.post('/bulk', requireModule(), ah(async (req, res) => {
   const { items } = req.body;
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'No se recibió ninguna lista de productos' });
@@ -65,7 +65,7 @@ router.post('/bulk', requireRole('admin'), ah(async (req, res) => {
 }));
 
 // Actualizar producto (incluye actualizar costo unitario -> recalcula costos de recetas al vuelo)
-router.put('/:id', requireRole('admin'), ah(async (req, res) => {
+router.put('/:id', requireModule(), ah(async (req, res) => {
   const item = await db.get('SELECT * FROM inventory_items WHERE id = ? AND restaurant_id = ?',
     [req.params.id, req.user.restaurant_id]);
   if (!item) return res.status(404).json({ error: 'No encontrado' });
@@ -91,7 +91,7 @@ router.put('/:id', requireRole('admin'), ah(async (req, res) => {
 // Eliminar un producto del almacén. Se bloquea si está siendo usado en
 // alguna receta (para no romper el costeo de esos platos/bebidas); el
 // historial de movimientos del producto se borra junto con él.
-router.delete('/:id', requireRole('admin'), ah(async (req, res) => {
+router.delete('/:id', requireModule(), ah(async (req, res) => {
   const item = await db.get('SELECT * FROM inventory_items WHERE id = ? AND restaurant_id = ?',
     [req.params.id, req.user.restaurant_id]);
   if (!item) return res.status(404).json({ error: 'No encontrado' });
@@ -117,7 +117,7 @@ router.delete('/:id', requireRole('admin'), ah(async (req, res) => {
 }));
 
 // Registrar entrada, salida o ajuste de stock (movimiento)
-router.post('/:id/movement', requireRole('admin'), ah(async (req, res) => {
+router.post('/:id/movement', requireModule(), ah(async (req, res) => {
   const { type, quantity, reason } = req.body; // type: entrada | salida | ajuste
   const item = await db.get('SELECT * FROM inventory_items WHERE id = ? AND restaurant_id = ?',
     [req.params.id, req.user.restaurant_id]);

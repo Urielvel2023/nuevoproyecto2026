@@ -1,7 +1,7 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
-const { authMiddleware, requireRole } = require('../auth');
+const { authMiddleware, requireModule } = require('../auth');
 const { can } = require('../permissions');
 const { requireActiveSubscription } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
@@ -17,7 +17,7 @@ router.get('/categories', ah(async (req, res) => {
   res.json(cats);
 }));
 
-router.post('/categories', requireRole('admin'), ah(async (req, res) => {
+router.post('/categories', requireModule(), ah(async (req, res) => {
   const { name, sort_order } = req.body;
   if (!name) return res.status(400).json({ error: 'El nombre es requerido' });
   const id = uuidv4();
@@ -26,7 +26,7 @@ router.post('/categories', requireRole('admin'), ah(async (req, res) => {
   res.json(await db.get('SELECT * FROM menu_categories WHERE id = ?', [id]));
 }));
 
-router.delete('/categories/:id', requireRole('admin'), ah(async (req, res) => {
+router.delete('/categories/:id', requireModule(), ah(async (req, res) => {
   await db.run('DELETE FROM menu_categories WHERE id = ? AND restaurant_id = ?',
     [req.params.id, req.user.restaurant_id]);
   res.json({ ok: true });
@@ -58,7 +58,7 @@ router.get('/items', ah(async (req, res) => {
   res.json(withCost.map(i => ({ ...i, has_recipe: !!i.recipe_id })));
 }));
 
-router.post('/items', requireRole('admin'), ah(async (req, res) => {
+router.post('/items', requireModule(), ah(async (req, res) => {
   const { name, description, price, category_id, recipe_id } = req.body;
   if (!name || price == null) return res.status(400).json({ error: 'Nombre y precio son requeridos' });
   const id = uuidv4();
@@ -73,7 +73,7 @@ router.post('/items', requireRole('admin'), ah(async (req, res) => {
   res.json(full);
 }));
 
-router.put('/items/:id', requireRole('admin'), ah(async (req, res) => {
+router.put('/items/:id', requireModule(), ah(async (req, res) => {
   const item = await db.get('SELECT * FROM menu_items WHERE id = ? AND restaurant_id = ?',
     [req.params.id, req.user.restaurant_id]);
   if (!item) return res.status(404).json({ error: 'No encontrado' });
@@ -99,7 +99,7 @@ router.put('/items/:id', requireRole('admin'), ah(async (req, res) => {
   res.json(full);
 }));
 
-router.delete('/items/:id', requireRole('admin'), ah(async (req, res) => {
+router.delete('/items/:id', requireModule(), ah(async (req, res) => {
   await db.run('DELETE FROM menu_items WHERE id = ? AND restaurant_id = ?', [req.params.id, req.user.restaurant_id]);
   req.app.get('io').to(req.user.restaurant_id).emit('menu:deleted', { id: req.params.id });
   res.json({ ok: true });
