@@ -17,6 +17,8 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readJson('user'));
   // Permisos del rol { modulo: ['ver','crear',...] } calculados por el servidor (server/permissions.js)
   const [permissions, setPermissions] = useState(() => readJson('permissions') || {});
+  // Estado de la prueba gratuita del restaurante (días restantes, vencida, bloqueo activo)
+  const [trial, setTrial] = useState(null);
 
   const login = useCallback((newToken, newUser, newPermissions = {}) => {
     localStorage.setItem('token', newToken);
@@ -34,6 +36,7 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUser(null);
     setPermissions({});
+    setTrial(null);
   }, []);
 
   const api = useMemo(() => {
@@ -41,6 +44,11 @@ export function AuthProvider({ children }) {
     instance.interceptors.request.use((config) => {
       if (token) config.headers.Authorization = `Bearer ${token}`;
       return config;
+    });
+    // 402 = la prueba terminó y el bloqueo está activo: la app muestra "Prueba terminada"
+    instance.interceptors.response.use(undefined, (err) => {
+      if (err.response?.status === 402) setTrial(t => ({ ...(t || {}), expired: true, enforced: true }));
+      return Promise.reject(err);
     });
     return instance;
   }, [token]);
@@ -51,6 +59,7 @@ export function AuthProvider({ children }) {
     api.get('/auth/me').then(({ data }) => {
       localStorage.setItem('permissions', JSON.stringify(data.permissions));
       setPermissions(data.permissions);
+      setTrial(data.trial || null);
     }).catch((err) => {
       if (err.response?.status === 401) logout();
     });
@@ -62,7 +71,7 @@ export function AuthProvider({ children }) {
   }, [user, permissions]);
 
   return (
-    <AuthContext.Provider value={{ token, user, login, logout, api, can, permissions }}>
+    <AuthContext.Provider value={{ token, user, login, logout, api, can, permissions, trial }}>
       {children}
     </AuthContext.Provider>
   );

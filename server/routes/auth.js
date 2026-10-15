@@ -7,7 +7,7 @@ const { ROLES, ROLE_LABELS, permissionsFor } = require('../permissions');
 const { audit } = require('../services/audit');
 const { ensureZoneTables } = require('../services/tables');
 const { getCountry, LEGAL_VERSION } = require('../compliance');
-const { trialEndDate } = require('../services/billing');
+const { trialEndDate, trialInfo } = require('../services/billing');
 const ah = require('../utils/asyncHandler');
 
 const router = express.Router();
@@ -75,7 +75,7 @@ router.post('/register-restaurant', ah(async (req, res) => {
       VALUES (?, ?, ?, ?, ?, 'admin', ?)
     `, [userId, restaurantId, adminName, email, passwordHash, now]);
 
-    // Suscripción de prueba (28 días por defecto, TRIAL_DAYS en services/billing.js)
+    // Suscripción de prueba (30 días por defecto, TRIAL_DAYS en services/billing.js)
     const trialEndsAt = trialEndDate();
     await t.run(`
       INSERT INTO platform_subscriptions (restaurant_id, plan, status, trial_ends_at)
@@ -132,7 +132,7 @@ router.use(authMiddleware);
 router.get('/me', ah(async (req, res) => {
   const user = await db.get('SELECT * FROM users WHERE id = ?', [req.user.id]);
   const { token, ...rest } = sessionPayload(user);
-  res.json(rest);
+  res.json({ ...rest, trial: await trialInfo(user.restaurant_id) });
 }));
 
 router.get('/roles', (req, res) => {

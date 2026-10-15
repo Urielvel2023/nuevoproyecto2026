@@ -44,7 +44,7 @@ export default function Terms() {
 
         <h2>3. Planes, precios y facturación</h2>
         <p>
-          Ofrecemos un período de prueba gratuito de 28 días. Al finalizar, para continuar usando el Servicio
+          Ofrecemos un período de prueba gratuito de 30 días. Al finalizar, para continuar usando el Servicio
           debes suscribirte a uno de los planes disponibles, cuyo precio se muestra en la página de precios.
           Los pagos se procesan a través de pasarelas de pago de terceros (Wompi y/o Stripe, según esté
           configurado). No almacenamos los datos completos de tu tarjeta; eso lo maneja directamente la

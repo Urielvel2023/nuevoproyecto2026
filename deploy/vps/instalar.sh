@@ -45,7 +45,7 @@ POSTGRES_DB=living_pos
 POSTGRES_USER=living_pos
 POSTGRES_PASSWORD=$(openssl rand -hex 24)
 JWT_SECRET=$(openssl rand -hex 48)
-TRIAL_DAYS=28
+TRIAL_DAYS=30
 ENFORCE_BILLING=false
 # Cobro de suscripciones (opcional)
 STRIPE_SECRET_KEY=

@@ -11,7 +11,7 @@
 const db = require('../db');
 
 // Días de prueba gratuita para cada restaurante nuevo (configurable con TRIAL_DAYS)
-const TRIAL_DAYS = Math.max(1, parseInt(process.env.TRIAL_DAYS, 10) || 28);
+const TRIAL_DAYS = Math.max(1, parseInt(process.env.TRIAL_DAYS, 10) || 30);
 
 function trialEndDate() {
   return new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
@@ -83,4 +83,18 @@ async function requireActiveSubscription(req, res, next) {
   }
 }
 
-module.exports = { TRIAL_DAYS, trialEndDate, PLANS, getStripe, mapStripeStatus, getOrCreateSubscription, requireActiveSubscription };
+// Estado de la prueba para mostrarlo en la app (días restantes, si ya venció y
+// si el bloqueo al vencer está activo).
+async function trialInfo(restaurantId) {
+  const sub = await getOrCreateSubscription(restaurantId);
+  const enforced = process.env.ENFORCE_BILLING === 'true';
+  if (sub.status === 'active') return { status: 'active', enforced };
+  const ends = sub.trial_ends_at ? new Date(sub.trial_ends_at) : null;
+  const daysLeft = ends ? Math.max(0, Math.ceil((ends - new Date()) / 86400000)) : null;
+  return {
+    status: sub.status, trial_days: TRIAL_DAYS, trial_ends_at: sub.trial_ends_at,
+    days_left: daysLeft, expired: !!(ends && ends <= new Date()), enforced
+  };
+}
+
+module.exports = { TRIAL_DAYS, trialEndDate, trialInfo, PLANS, getStripe, mapStripeStatus, getOrCreateSubscription, requireActiveSubscription };

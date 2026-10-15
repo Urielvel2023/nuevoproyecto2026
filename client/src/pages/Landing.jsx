@@ -42,7 +42,7 @@ export default function Landing() {
           <Link to="/login?registro=1" className="btn large">Empezar gratis</Link>
           <a href="#precios" className="btn secondary large">Ver precios</a>
         </div>
-        <p className="trial-note">28 días de prueba gratis. No se necesita tarjeta para empezar.</p>
+        <p className="trial-note">30 días de prueba gratis. No se necesita tarjeta para empezar.</p>
       </header>
 
       <section className="public-section">
@@ -61,7 +61,7 @@ export default function Landing() {
 
       <section className="public-section" id="precios">
         <h2>Precios simples</h2>
-        <p className="section-subtitle">Empieza gratis 28 días. Cancela cuando quieras.</p>
+        <p className="section-subtitle">Empieza gratis 30 días. Cancela cuando quieras.</p>
         <div className="pricing-grid">
           {plans.map((p, i) => (
             <div key={p.id} className={`price-card ${i === 1 ? 'featured' : ''}`}>

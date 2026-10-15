@@ -26,6 +26,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: TRIAL_DAYS
-        value: "28"
+        value: "30"
+      # true = al terminar la prueba, la app muestra "Prueba terminada" y bloquea el uso
       - key: ENFORCE_BILLING
-        value: "false"
+        value: "true"
